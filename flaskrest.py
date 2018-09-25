@@ -5,13 +5,17 @@ from requests.auth import HTTPBasicAuth
 import urllib3
 urllib3.disable_warnings()
 import arrow
+from infinisdk import InfiniBox
 
 
 app = Flask(__name__)
 api = Api(app)
 
 ibox = "192.168.0.30"
+cred=('admin', '123456')
 creds = HTTPBasicAuth('admin', '123456')
+system=InfiniBox(ibox,cred)
+system.login()
 onegig = 1000000000
 id_str="546c4f25-FFFF-FFFF-ab9c-34306c4"
 date_format='YYYY-MM-DD HH:mm:ss'
@@ -27,6 +31,17 @@ def set_new_id(id):
 	embedding_zeros=id_len-len(str(id))
 	new_id=id_str+embedding_zeros*"0"+str(id)
 	return new_id
+
+def add_metadata(vol_json):
+	vol_id=vol_json['result']['id']
+	vol_obj_list=system.volumes.find(id=vol_id).to_list()
+	if vol_obj_list:
+		vol_obj=vol_obj_list[0]
+		metadata=vol_obj.get_all_metadata()
+		for key in metadata.keys():
+			vol_json['result'][key]=metadata[key]
+	return vol_json
+	
 
 def poolselect():
     url="http://{}/api/rest/pools".format(ibox)
@@ -68,6 +83,7 @@ class Volume(Resource):
         url="http://{}/api/rest/volumes/{}".format(ibox, id)
         outp = requests.get(url=url,auth=creds)
 	outp_json = outp.json()
+	outp_json=add_metadata(outp_json)
 	outp_json['result']['id'] = set_new_id(outp_json['result']['id'])
 	outp_json['result']['size'] = new_size(int(outp_json['result']['size']))
 	outp_json['result']['create_at'] = new_date(int(outp_json['result']['created_at']))
