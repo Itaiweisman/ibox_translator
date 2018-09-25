@@ -4,6 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import urllib3
 urllib3.disable_warnings()
+import arrow
 
 
 app = Flask(__name__)
@@ -13,7 +14,15 @@ ibox = "192.168.0.30"
 creds = HTTPBasicAuth('admin', '123456')
 onegig = 1000000000
 id_str="546c4f25-FFFF-FFFF-ab9c-34306c4"
+date_format='YYYY-MM-DD HH:mm:ss'
 id_len=5
+
+new_size = lambda  size: size/1024/1024/1024 
+def new_date(date):
+	print "Date is {}".format(date)
+	tsa=arrow.get(str(date)[:-3])
+	return tsa.format(date_format)
+
 def set_new_id(id):
 	embedding_zeros=id_len-len(str(id))
 	new_id=id_str+embedding_zeros*"0"+str(id)
@@ -60,6 +69,8 @@ class Volume(Resource):
         outp = requests.get(url=url,auth=creds)
 	outp_json = outp.json()
 	outp_json['result']['id'] = set_new_id(outp_json['result']['id'])
+	outp_json['result']['size'] = new_size(int(outp_json['result']['size']))
+	outp_json['result']['create_at'] = new_date(int(outp_json['result']['created_at']))
         #return outp.json(), int(outp.status_code)
         return outp_json, int(outp.status_code)
         
