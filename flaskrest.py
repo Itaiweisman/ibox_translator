@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request,abort
 from flask_restful import Api, Resource, reqparse
 import requests
 from requests.auth import HTTPBasicAuth
@@ -92,9 +92,13 @@ class Volume(Resource):
         return outp_json, int(outp.status_code)
         
     def post(self, id):
-        pass
+
+        string="id is {}".format(id)
+        return string
     def put(self, id):
-        pass
+        body=request.json
+        string="id is {} data is {}".format(id, body)
+        return string,400
     def delete(self, id):
         url="http://{}/api/rest/volumes/{}?approved=yes".format(ibox, id)
         outp = requests.delete(url=url,auth=creds)
