@@ -1,4 +1,4 @@
-from flask import Flask, request,abort
+from flask import Flask, request,abort,jsonify
 from flask_restful import Api, Resource, reqparse
 import requests
 from requests.auth import HTTPBasicAuth
@@ -10,15 +10,38 @@ from capacity import GB
 #https://flask-restful.readthedocs.io/en/0.3.5/quickstart.html
 
 
+
+class InvalidUsage(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
 app = Flask(__name__)
 api = Api(app)
 
+
+## To be replaced with the actual values
 ibox = "192.168.0.30"
 cred=('admin', '123456')
 creds = HTTPBasicAuth('admin', '123456')
+
+### InfiniSDK Part
+#Creds=HTTPBasicAuth(cred)
 system=InfiniBox(ibox,cred)
 system.login()
 pool=system.pools.to_list()[0]
+###
+# Constants
 onegig = 1000000000
 id_str="546c4f25-FFFF-FFFF-ab9c-34306c4"
 service_id='d4a44b0a-e3c2-4fec-9a3c-1d2cb14328f9'
@@ -26,6 +49,10 @@ date_format='YYYY-MM-DD HH:mm:ss'
 id_len=5
 opts_pars = { 'volume_type': 'iscsi' , 'iscsi_init': 0, 'image_id': 0, 'bootable': 0, 'zone_code': 0}
 mandatory_pars = ['name','size']
+
+
+## Functions
+
 new_size = lambda  size: size/1024/1024/1024 
 def new_date(date):
 	print "Date is {}".format(date)
@@ -96,17 +123,17 @@ class VolumesList(Resource):
         #}
         #outp = requests.post(url=url,json=vol, auth=creds)
         body=request.json
-        print "this is body {}".format(body)
+        #print "this is body {}".format(body)
         for mandatory_key in mandatory_pars:
             if mandatory_key not in body:
                 print "mandatory_key {} can't be found".format(mandatory_key)
-                abort(404)
+                raise InvalidUsage('Mandatory key cannot be found', status_code=410)
         try:
             print "Creating a volume, size {}, name {}".format(body['size'],body['name'])
             volume=system.volumes.create(pool=pool,size=body['size']*GB,name=body['name'])
         except Exception as E:
-            print E
-            abort(404)
+        
+            raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
         for optional_key in opts_pars:
             if optional_key in body:
                 volume.set_metadata(optional_key,body[optional_key])
@@ -115,7 +142,7 @@ class VolumesList(Resource):
         vol_new_id=set_new_id(volume.get_id())
         url="http://{}/api/rest/volumes/{}".format(ibox,volume.get_id())
         vol_infi_data=requests.get(url=url,auth=creds)
-        print "INFI DATA****** {}".format(vol_infi_data)
+        #print "INFI DATA****** {}".format(vol_infi_data)
         vol_data=get_vol_data(vol_infi_data.json(), vol_new_id)
         return vol_data, 200
 
