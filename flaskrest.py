@@ -83,19 +83,20 @@ def poolselect():
 
 def get_vol_data(vol_data,vol_id):
     return_json={}
-    return_json.update(add_metadata(vol_data))
+    return_json['volumes']={}
+    return_json['volumes'].update(add_metadata(vol_data))
     #return_json['id'] = set_new_id(outp_json['result']['id'])
-    return_json['id'] = vol_id
-    return_json['size'] = new_size(int(vol_data['result']['size']))
-    return_json['create_at'] = new_date(int(vol_data['result']['created_at']))
-    return_json['name'] = vol_data['result']['name']
-    return_json['lun_id'] = vol_data['result']['id']
-    return_json['iscsi_init'] = vol_data['result']['serial']
-    return_json['service_id'] = service_id
+    return_json['volumes']['id'] = vol_id
+    return_json['volumes']['size'] = new_size(int(vol_data['result']['size']))
+    return_json['volumes']['create_at'] = new_date(int(vol_data['result']['created_at']))
+    return_json['volumes']['name'] = vol_data['result']['name']
+    return_json['volumes']['lun_id'] = vol_data['result']['id']
+    return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
+    return_json['volumes']['service_id'] = service_id
     if vol_data['result']['mapped']:
-        return_json['attach_status'] = 'online'
+        return_json['volumes']['attach_status'] = 'online'
     else:
-        return_json['attach_status'] = 'offline'
+        return_json['volumes']['attach_status'] = 'offline'
     return return_json
 
 class VolumesList(Resource):
@@ -182,8 +183,9 @@ class Volume(Resource):
             abort(404)
         vol_data=get_vol_data(outp.json(),vol_id)
         ret_data={}
+        #ret_data['volume_id']=vol_data['volumes']['id']
         ret_data['volume_id']=vol_id
-        ret_data['create_at']=vol_data['create_at']
+        ret_data['create_at']=vol_data['volumes']['create_at']
         ret_data['status']='deleted'
         ret_data['result']='success'
         ret_data['snapshot_id']=""
