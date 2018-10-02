@@ -7,6 +7,7 @@ urllib3.disable_warnings()
 import arrow
 from infinisdk import InfiniBox
 from capacity import GB
+import time
 #https://flask-restful.readthedocs.io/en/0.3.5/quickstart.html
 
 
@@ -191,6 +192,7 @@ class Volume(Resource):
         ret_data['snapshot_id']=""
         ret_data['notify_type']='volume_delete'
         #return "kuku",200
+        time.sleep(5)
         return ret_data, int(outp.status_code)
 
 api.add_resource(VolumesList, "/api/v1/volumes")
