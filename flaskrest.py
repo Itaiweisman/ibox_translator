@@ -94,6 +94,7 @@ def get_vol_data(vol_data,vol_id):
     return_json['volumes']['lun_id'] = vol_data['result']['id']
     return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
     return_json['volumes']['service_id'] = service_id
+    return_json['volumes']['status'] = 'CREATED'
     if vol_data['result']['mapped']:
         return_json['volumes']['attach_status'] = 'online'
     else:
