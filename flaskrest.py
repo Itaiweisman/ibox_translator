@@ -8,6 +8,7 @@ import arrow
 from infinisdk import InfiniBox
 from capacity import GB
 import time
+import random, string
 #https://flask-restful.readthedocs.io/en/0.3.5/quickstart.html
 
 
@@ -48,13 +49,15 @@ id_str="546c4f25-FFFF-FFFF-ab9c-34306c4"
 service_id='d4a44b0a-e3c2-4fec-9a3c-1d2cb14328f9'
 date_format='YYYY-MM-DD HH:mm:ss'
 id_len=5
-opts_pars = { 'volume_type': 'iscsi' , 'iscsi_init': 0, 'image_id': 0, 'bootable': 0, 'zone_code': 0}
+opts_pars = { 'volume_type': '' , 'iscsi_init': '', 'image_id': '', 'bootable': 0, 'zone_code': 0}
+#iscsi_init=''
 mandatory_pars = ['name','size']
+vol_name_length=10
 
 
 ## Functions
-
-new_size = lambda  size: size/1024/1024/1024 
+generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
+new_size = lambda  size: size/1000/1000/1000 
 def new_date(date):
 	print "Date is {}".format(date)
 	tsa=arrow.get(str(date)[:-3])
@@ -90,11 +93,12 @@ def get_vol_data(vol_data,vol_id):
     return_json['volumes']['id'] = vol_id
     return_json['volumes']['size'] = new_size(int(vol_data['result']['size']))
     return_json['volumes']['create_at'] = new_date(int(vol_data['result']['created_at']))
-    return_json['volumes']['name'] = vol_data['result']['name']
+    #return_json['volumes']['name'] = vol_data['result']['name']
     return_json['volumes']['lun_id'] = vol_data['result']['id']
-    return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
+    #return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
+    return_json['volumes']['iscsi_init'] = iscsi_init
     return_json['volumes']['service_id'] = service_id
-    return_json['volumes']['status'] = 'CREATED'
+    return_json['volumes']['status'] = 'available'
     if vol_data['result']['mapped']:
         return_json['volumes']['attach_status'] = 'online'
     else:
@@ -128,24 +132,37 @@ class VolumesList(Resource):
         body=request.json
         #print "this is body {}".format(body)
         for mandatory_key in mandatory_pars:
-            if mandatory_key not in body:
+            if mandatory_key not in body['volumes']: ##1
                 print "mandatory_key {} can't be found".format(mandatory_key)
                 raise InvalidUsage('Mandatory key cannot be found', status_code=410)
         try:
-            print "Creating a volume, size {}, name {}".format(body['size'],body['name'])
-            volume=system.volumes.create(pool=pool,size=body['size']*GB,name=body['name'])
+            #print "Creating a volume, size {}, name {}".format(body['size'],body['name'])
+            new_name=generate_random_name(vol_name_length)
+            #volume=system.volumes.create(pool=pool,size=body['size']*GB,name=body['name'])
+            volume=system.volumes.create(pool=pool,size=body['volumes']['size']*GB,name=new_name)
         except Exception as E:
         
             raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
+        volume.set_metadata('name',body['volumes']['name'])
         for optional_key in opts_pars:
-            if optional_key in body:
-                volume.set_metadata(optional_key,body[optional_key])
+            if optional_key in body['volumes']:
+                volume.set_metadata(optional_key,body['volumes'][optional_key])
             else:
                 volume.set_metadata(optional_key,opts_pars[optional_key])
         vol_new_id=set_new_id(volume.get_id())
         url="http://{}/api/rest/volumes/{}".format(ibox,volume.get_id())
         vol_infi_data=requests.get(url=url,auth=creds)
         #print "INFI DATA****** {}".format(vol_infi_data)
+        global iscsi_init
+        global volume_type
+        if 'iscsi_init' in body['volumes'].keys():
+            iscsi_init=body['volumes']['iscsi_init']
+        else:
+            iscsi_init=''
+        #if 'volume_type' in body['volumes'].keys():
+        #    volume_type=body['volumes']['volume_type']
+        #else:
+        #    volume_type=''
         vol_data=get_vol_data(vol_infi_data.json(), vol_new_id)
         return vol_data, 200
 
