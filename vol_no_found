@@ -1,0 +1,6 @@
+a=requests.get("http://ibox1499/api/rest/volumes/31123",auth=('iscsi','123456'))
+>>> if a.json()['error']:
+...    print "Not Found"
+... else:
+...    print a.json()
+...
