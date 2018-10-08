@@ -141,6 +141,7 @@ class VolumesList(Resource):
         #}
         #outp = requests.post(url=url,json=vol, auth=creds)
         body=request.json
+
         #print "this is body {}".format(body)
         for mandatory_key in mandatory_pars:
             if mandatory_key not in body['volumes']: ##1
@@ -161,6 +162,7 @@ class VolumesList(Resource):
             else:
                 volume.set_metadata(optional_key,opts_pars[optional_key])
         vol_new_id=set_new_id(volume.get_id())
+        notify=notify_dir+vol_new_id
         url="http://{}/api/rest/volumes/{}".format(ibox,volume.get_id())
         vol_infi_data=requests.get(url=url,auth=creds)
         #print "INFI DATA****** {}".format(vol_infi_data)
@@ -175,6 +177,21 @@ class VolumesList(Resource):
         #else:
         #    volume_type=''
         vol_data=get_vol_data(vol_infi_data.json(), vol_new_id)
+        notify_vol={}
+        notify_vol={"snapshot_id":"", "notify_type":"volume_create","status":"available","result":"success"}
+        notify_vol['volume_id'] = vol_new_id
+        notify_vol['create_at'] = vol_data['volumes']['create_at']
+        try:
+            #print "notify is {}".format(notify)
+            notify_f=open(notify,'w')
+            notify_f.writelines(json.dumps(notify_vol))
+            notify_f.close()
+            notify_rm(notify)
+        except Exception as E:
+            str="Failed! {}".format(E)
+        #print str
+            return str,400
+
         return vol_data, 200
 
 class Volume(Resource):
@@ -213,7 +230,7 @@ class Volume(Resource):
             outp = requests.delete(url=url,auth=creds)
         except Exception as E:
             print E
-            abort(404)
+            abort(500)
         vol_data=get_vol_data(outp.json(),vol_id)
         ret_data={}
         #ret_data['volume_id']=vol_data['volumes']['id']
@@ -223,16 +240,15 @@ class Volume(Resource):
         ret_data['result']='success'
         ret_data['snapshot_id']=""
         ret_data['notify_type']='volume_delete'
-	try:
-		print "notify is {}".format(notify)
-		notify_f=open(notify,'w')
-		notify_f.writelines(json.dumps(ret_data))
-		notify_f.close()
-		notify_rm(notify)
-	except Exception as E:
-		str="Failed! {}".format(E)
-		#print str
-		return str,400
+        try:
+        	print "notify is {}".format(notify)
+	    	notify_f=open(notify,'w')
+	    	notify_f.writelines(json.dumps(ret_data))
+	    	notify_f.close()
+	    	notify_rm(notify)
+	except Exception:
+	    	pass
+        #print str
         #return "kuku",200
         time.sleep(5)
         return ret_data, int(outp.status_code)
