@@ -191,7 +191,7 @@ class VolumesList(Resource):
             str="Failed! {}".format(E)
         #print str
             return str,400
-
+	vol_data['volumes']['status']='creating'
         return vol_data, 200
 
 class Volume(Resource):

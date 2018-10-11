@@ -1,10 +1,10 @@
 #! /bin/sh
 DATA=$1
-URI="/api/rest/volumes"
-SERVER="192.168.0.30"
+URI="syncpc/storage-resp.do"
+SERVER="221.148.108.21"
 CURL="/usr/bin/curl"
-PORT=80
-SLEEP=5
+PORT=8050
+SLEEP=15
 LOGDIR="/tmp"
 LOGNAME="notify.log"
 LOG="${LOGDIR}/${LOGNAME}"
