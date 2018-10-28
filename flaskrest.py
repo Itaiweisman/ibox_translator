@@ -9,6 +9,8 @@ from infinisdk import InfiniBox
 from capacity import GB
 import time
 import random, string
+import json
+import subprocess
 #https://flask-restful.readthedocs.io/en/0.3.5/quickstart.html
 
 
@@ -34,10 +36,13 @@ api = Api(app)
 
 ## To be replaced with the actual values
 ibox = "192.168.0.30"
+notify_dir = '/tmp/'
+notify_log = notify_dir+ "notify.log"
+notify_script = "./notify_rm.sh"
 cred=('admin', '123456')
 creds = HTTPBasicAuth('admin', '123456')
 
-### InfiniSDK Part
+### InfiniSDK Par/t
 #Creds=HTTPBasicAuth(cred)
 system=InfiniBox(ibox,cred)
 system.login()
@@ -67,6 +72,12 @@ def set_new_id(id):
 	embedding_zeros=id_len-len(str(id))
 	new_id=id_str+embedding_zeros*"0"+str(id)
 	return new_id
+def notify_rm(file):
+	try:
+		return subprocess.Popen([notify_script,file])
+	except Exception as E:
+		notify_log_file=open(notify_log,'w')
+		notify.write("Failed to call notify, {}".fomrat(E))
 
 def add_metadata(vol_json):
     ret_dict={}
@@ -130,6 +141,7 @@ class VolumesList(Resource):
         #}
         #outp = requests.post(url=url,json=vol, auth=creds)
         body=request.json
+
         #print "this is body {}".format(body)
         for mandatory_key in mandatory_pars:
             if mandatory_key not in body['volumes']: ##1
@@ -150,6 +162,7 @@ class VolumesList(Resource):
             else:
                 volume.set_metadata(optional_key,opts_pars[optional_key])
         vol_new_id=set_new_id(volume.get_id())
+        notify=notify_dir+vol_new_id
         url="http://{}/api/rest/volumes/{}".format(ibox,volume.get_id())
         vol_infi_data=requests.get(url=url,auth=creds)
         #print "INFI DATA****** {}".format(vol_infi_data)
@@ -164,6 +177,21 @@ class VolumesList(Resource):
         #else:
         #    volume_type=''
         vol_data=get_vol_data(vol_infi_data.json(), vol_new_id)
+        notify_vol={}
+        notify_vol={"snapshot_id":"", "notify_type":"volume_create","status":"available","result":"success"}
+        notify_vol['volume_id'] = vol_new_id
+        notify_vol['create_at'] = vol_data['volumes']['create_at']
+        try:
+            #print "notify is {}".format(notify)
+            notify_f=open(notify,'w')
+            notify_f.writelines(json.dumps(notify_vol))
+            notify_f.close()
+            notify_rm(notify)
+        except Exception as E:
+            str="Failed! {}".format(E)
+        #print str
+            return str,400
+	vol_data['volumes']['status']='creating'
         return vol_data, 200
 
 class Volume(Resource):
@@ -177,6 +205,8 @@ class Volume(Resource):
         print "URL IS {}".format(url)
         outp = requests.get(url=url,auth=creds)
         outp_json = outp.json()
+        if outp_json['error'] or not outp_json['result']:
+            return {},'200'
         return_json=get_vol_data(outp_json,vol_id)
         #return outp.json() int(outp.status_code)
         return return_json, int(outp.status_code)
@@ -191,6 +221,7 @@ class Volume(Resource):
         string="id is {} data is {}".format(id, body)
         return string,400
     def delete(self, vol_id):
+	notify=notify_dir+vol_id
         infi_vol_id=int(vol_id[-5:])
         #print "*** VOL ID IS {}".format(vol_id)
         url="http://{}/api/rest/volumes/{}?approved=yes".format(ibox, infi_vol_id)
@@ -199,7 +230,7 @@ class Volume(Resource):
             outp = requests.delete(url=url,auth=creds)
         except Exception as E:
             print E
-            abort(404)
+            abort(500)
         vol_data=get_vol_data(outp.json(),vol_id)
         ret_data={}
         #ret_data['volume_id']=vol_data['volumes']['id']
@@ -209,6 +240,15 @@ class Volume(Resource):
         ret_data['result']='success'
         ret_data['snapshot_id']=""
         ret_data['notify_type']='volume_delete'
+        try:
+        	print "notify is {}".format(notify)
+	    	notify_f=open(notify,'w')
+	    	notify_f.writelines(json.dumps(ret_data))
+	    	notify_f.close()
+	    	notify_rm(notify)
+	except Exception:
+	    	pass
+        #print str
         #return "kuku",200
         time.sleep(5)
         return ret_data, int(outp.status_code)
