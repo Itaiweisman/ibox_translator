@@ -6,12 +6,15 @@ import urllib3
 urllib3.disable_warnings()
 import arrow
 from infinisdk import InfiniBox
-from capacity import GB
+from capacity import GB,GiB
+
 import time
 import random, string
 import json
 import subprocess
 from infi.dtypes.iqn import make_iscsi_name
+from time import gmtime, strftime
+
 #https://flask-restful.readthedocs.io/en/0.3.5/quickstart.html
 
 ## V2 - Volume functions
@@ -27,11 +30,12 @@ def get_host(system,host_name):
         return host
 
 def check_iqn_logged_in(system,iqn):
-    initators=system.initators.to_list()
+    initators=system.initiators.to_list()
+    print "initators: {}".format(initators)
     for init in initators:
         if init['address'] == iqn:
-            return True
-    return False
+            return False
+    return True
 
 class InvalidUsage(Exception):
     status_code = 400
@@ -82,6 +86,7 @@ vol_name_length=10
 
 ## Functions
 generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
+ts=lambda now: strftime("%Y-%m-%d %H:%M:%S", gmtime())
 new_size = lambda  size: size/1000/1000/1000 
 def new_date(date):
 	print "Date is {}".format(date)
@@ -275,41 +280,87 @@ class Volume(Resource):
 class VolumesAttachment(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-        #self.reqparse
-    def get(self):
-        pass
-    def delete(self):
-        pass
-    def put(self):
-        pass
-    def post(self, vol_id):
+
+    def post(self):
         body=request.json
         status='success'
-        host=get_host(body['volume']['iscsi_init'])
+        host=get_host(system,body['volume']['iscsi_init'])
         for volume in body['volume']['volumes']:
             vol=system.volumes.find(id=volume['volume_id'][-5:]).to_list()
-            pass if not vol
-            if body['action'].upper() == "ATTACH":
+            if not vol:
+                pass
+            if body['volume']['action'].upper() == "ATTACH":
                 try: 
-                    host.map_volume(vol,lun=volume['order'])
-                except Exception:
+                    host.map_volume(vol[0],lun=volume['order'])
+                except Exception as E:
+                    print "Execption {}".format(E)
                     status='fail'
-            if body['action'].upper() == "DETACH":
+            elif body['volume']['action'].upper() == "DETACH":
                 ## TASK - Add tests here to find if volume is 'in use'
                 for attempt in xrange(loggedout_attempts):
-
-                    if check_iqn_logged_in(body['volume']['iscsi_init']):
-                         host.unmap_volume(vol)
+                    val=check_iqn_logged_in(system,body['volume']['iscsi_init'])
+                    print "val is {}".format(val)
+                    if val:
+                         print "unmapping {} which is {}".format(vol[0],type(vol[0]))
+                         host.unmap_volume(vol[0])
                          status='success'
-                    else
+                         break
+                    else:
                         time.sleep(loggedout_interval)
+                        print "Host is still online"
                         status='fail'
+            else:
+                status='fail'
+
         body['status']=status
         return body,200 ## change ret codes
 
+class VolumeExpand(Resource):
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
 
+    def post(self,vol_id):
+        body=request.json
+        print "body is {}".format(body)
+        print "id is {}".format(vol_id)
+        #volume=body['volume']['volume_id']
+        volume=vol_id
+        new_size=body['volume']['size']
+
+        volume_object=system.volumes.find(id=vol_id[-5:]).to_list()
+        if not volume_object:
+            return 404,"Volume not found"
+        volume_size=volume_object[0].get_size().bits/8/1024/1024/1024
+        if volume_size > new_size:
+            return 405,"Volume is already bigger"
+        cap_to_resize=(new_size-volume_size)*GB
+        try:
+            volume_object[0].resize(cap_to_resize)
+        except Exception as E:
+            print "Caught Exception {}".format(E)
+            return 500,"Exception"
+        ret_data={}
+        #ret_data['volume_id']=vol_data['volumes']['id']
+        ret_data['volume_id']=vol_id
+        ret_data['snapshot_id']=''
+        ret_data['status']='available'
+        ret_data['result']='success'
+        ret_data['snapshot_id']=""
+        ret_data['notify_type']='volume_extend'
+        ret_data['create_at']=ts("now")
+        try:
+            print "notify is {}".format(notify)
+            notify_f=open(notify,'w')
+            notify_f.writelines(json.dumps(ret_data))
+            notify_f.close()
+            notify_rm(notify)
+        except Exception:
+            pass
+        return 200,"success"
+    
 api.add_resource(VolumesList, "/api/v1/volumes")
 api.add_resource(VolumesAttachment, "/api/v1/volumes/attachment")
 api.add_resource(Volume, "/api/v1/volumes/<string:vol_id>")
+api.add_resource(VolumeExpand, "/api/v1/volumes/<string:vol_id>/expand")
 app.run(debug=True, port=8080, host='0.0.0.0')
     
