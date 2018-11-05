@@ -132,7 +132,8 @@ def get_vol_data(vol_data,vol_id):
     #return_json['volumes']['name'] = vol_data['result']['name']
     return_json['volumes']['lun_id'] = vol_data['result']['id']
     #return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
-    return_json['volumes']['iscsi_init'] = iscsi_init
+    #return_json['volumes']['iscsi_init'] = iscsi_init
+    #return_json['volumes']['iscsi_init'] = iscsi_init
     return_json['volumes']['service_id'] = service_id
     return_json['volumes']['status'] = 'available'
     if vol_data['result']['mapped']:
@@ -151,9 +152,12 @@ class VolumesList(Resource):
         super(VolumesList, self).__init__()
     def get(self):
         #url="http://{}/api/rest/volumes/{}".format(ibox, id)
-        url="http://{}/api/rest/volumes".format(ibox)
+        #url="http://{}/api/rest/volumes".format(ibox)
         #outp = requests.get(url=url,auth=HTTPBasicAuth('iscsi', '123456')).json()['result']
-        outp = requests.get(url=url,auth=creds)
+        volumes=system.volumes.to_list()
+        for volume in volumes:
+            print get_vol_data(volume)
+            
         return outp.json(), int(outp.status_code)
     def post(self):
         #url="http://{}/api/rest/volumes".format(ibox)
@@ -181,6 +185,8 @@ class VolumesList(Resource):
         
             raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
         volume.set_metadata('name',body['volumes']['name'])
+        ## Itai ISCSI INIT SET
+        volume.set_metadata('iscsi_init',body['volumes']['iscsi_init'])
         for optional_key in opts_pars:
             if optional_key in body['volumes']:
                 volume.set_metadata(optional_key,body['volumes'][optional_key])
