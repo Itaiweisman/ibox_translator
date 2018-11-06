@@ -189,7 +189,8 @@ class VolumesList(Resource):
         for volume in volumes:
             #print outp
             cur_vol=get_vol_data(volume)
-            outp.append(cur_vol)
+
+            outp.append(cur_vol['volumes'])
         print outp
         return outp,'200'
     def post(self):
