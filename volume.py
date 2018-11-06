@@ -122,7 +122,7 @@ def add_metadata(volume):
         ret_dict[key]=metadata[key]
     return ret_dict
 
-    
+
 def poolselect():
     url="http://{}/api/rest/pools".format(ibox)
     pools = requests.get(url=url,auth=creds)
@@ -268,7 +268,7 @@ class Volume(Resource):
         #outp = requests.get(url=url,auth=creds)
         #outp_json = outp.json()
         try:
-            volume=system.volumes.find(id=infi_id)
+            volume=system.volumes.find(id=infi_id)[0]
         except Exception: #outp_json['error'] or not outp_json['result']:
             return {},'404'
         #ITAI 08/11/2018 return_json=get_vol_data(outp_json,vol_id)
