@@ -184,11 +184,12 @@ class VolumesList(Resource):
         #url="http://{}/api/rest/volumes/{}".format(ibox, id)
         #url="http://{}/api/rest/volumes".format(ibox)
         #outp = requests.get(url=url,auth=HTTPBasicAuth('iscsi', '123456')).json()['result']
+        outp={}
         volumes=system.volumes.to_list()
         for volume in volumes:
-            print get_vol_data(volume)
+            outp.update(get_vol_data(volume))
             
-        return outp.json(), int(outp.status_code)
+        return outp,'200'
     def post(self):
         #url="http://{}/api/rest/volumes".format(ibox)
         #args = self.reqparse.parse_args()
