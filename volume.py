@@ -104,7 +104,7 @@ def notify_rm(file):
 		notify_log_file=open(notify_log,'w')
 		notify.write("Failed to call notify, {}".fomrat(E))
 
-def add_metadata(vol_json):
+def add_metadata_old(vol_json):
     ret_dict={}
     vol_id=vol_json['result']['id']
     vol_obj_list=system.volumes.find(id=vol_id).to_list()
@@ -115,7 +115,14 @@ def add_metadata(vol_json):
             ret_dict[key]=metadata[key]
     return ret_dict
 	
+def add_metadata(volume):
+    ret_dict={}
+    metadata=volume.get_all_metadata()
+    for key in metadata.keys():
+        ret_dict[key]=metadata[key]
+    return ret_dict
 
+    
 def poolselect():
     url="http://{}/api/rest/pools".format(ibox)
     pools = requests.get(url=url,auth=creds)
@@ -146,7 +153,8 @@ def get_vol_data_old(vol_data,vol_id):
 def get_vol_data(volume):
     return_json={}
     return_json['volumes']={}
-    return_json['volumes'].update(add_metadata(vol_data))
+    #ITAI 08/11/2018 return_json['volumes'].update(add_metadata(vol_data))
+    return_json['volumes'].update(add_metadata(volume))
     #return_json['id'] = set_new_id(outp_json['result']['id'])
     return_json['volumes']['id'] = set_new_id(volume.get_id())
     return_json['volumes']['size'] = new_size(volume.get_size().bits/8/1024/1024/1024)
@@ -278,7 +286,7 @@ class Volume(Resource):
         string="id is {} data is {}".format(id, body)
         return string,400
     def delete(self, vol_id):
-	    notify=notify_dir+vol_id
+        notify=notify_dir+vol_id
         infi_vol_id=int(vol_id[-5:])
         #print "*** VOL ID IS {}".format(vol_id)
         #ITAI 08/11/2018
