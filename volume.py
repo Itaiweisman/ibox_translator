@@ -121,7 +121,7 @@ def poolselect():
     pools = requests.get(url=url,auth=creds)
     return pools.json()['result'][-1]
 
-def get_vol_data(vol_data,vol_id):
+def get_vol_data_old(vol_data,vol_id):
     return_json={}
     return_json['volumes']={}
     return_json['volumes'].update(add_metadata(vol_data))
@@ -137,6 +137,28 @@ def get_vol_data(vol_data,vol_id):
     return_json['volumes']['service_id'] = service_id
     return_json['volumes']['status'] = 'available'
     if vol_data['result']['mapped']:
+        return_json['volumes']['attach_status'] = 'online'
+    else:
+        return_json['volumes']['attach_status'] = 'offline'
+    return 
+
+
+def get_vol_data(volume):
+    return_json={}
+    return_json['volumes']={}
+    return_json['volumes'].update(add_metadata(vol_data))
+    #return_json['id'] = set_new_id(outp_json['result']['id'])
+    return_json['volumes']['id'] = set_new_id(volume.get_id())
+    return_json['volumes']['size'] = new_size(volume.get_size().bits/8/1024/1024/1024)
+    return_json['volumes']['create_at'] = volume.get_created_at().format('YYYY-MM-DD HH:mm:ss')
+    #return_json['volumes']['name'] = vol_data['result']['name']
+    return_json['volumes']['lun_id'] = volume.get_id()
+    #return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
+    #return_json['volumes']['iscsi_init'] = iscsi_init
+    #return_json['volumes']['iscsi_init'] = iscsi_init
+    return_json['volumes']['service_id'] = service_id
+    return_json['volumes']['status'] = 'available'
+    if volume.is_mapped():
         return_json['volumes']['attach_status'] = 'online'
     else:
         return_json['volumes']['attach_status'] = 'offline'
@@ -207,7 +229,8 @@ class VolumesList(Resource):
         #    volume_type=body['volumes']['volume_type']
         #else:
         #    volume_type=''
-        vol_data=get_vol_data(vol_infi_data.json(), vol_new_id)
+        #ITAI 08/11/18 vol_data=get_vol_data(vol_infi_data.json(), vol_new_id)
+        vol_data=get_vol_data(volume)
         notify_vol={}
         notify_vol={"snapshot_id":"", "notify_type":"volume_create","status":"available","result":"success"}
         notify_vol['volume_id'] = vol_new_id
@@ -232,13 +255,16 @@ class Volume(Resource):
     def get(self, vol_id):
         #url="http://{}/api/rest/volumes/{}".format(ibox, id)
         infi_id=vol_id[-5:]
-        url="http://{}/api/rest/volumes/{}".format(ibox, infi_id)
-        print "URL IS {}".format(url)
-        outp = requests.get(url=url,auth=creds)
-        outp_json = outp.json()
-        if outp_json['error'] or not outp_json['result']:
-            return {},'200'
-        return_json=get_vol_data(outp_json,vol_id)
+        #url="http://{}/api/rest/volumes/{}".format(ibox, infi_id)
+        #print "URL IS {}".format(url)
+        #outp = requests.get(url=url,auth=creds)
+        #outp_json = outp.json()
+        try:
+            volume=system.volumes.find(id=infi_id)
+        except Exception: #outp_json['error'] or not outp_json['result']:
+            return {},'404'
+        #ITAI 08/11/2018 return_json=get_vol_data(outp_json,vol_id)
+        return_json=get_vol_data(volume)
         #return outp.json() int(outp.status_code)
         return return_json, int(outp.status_code)
         
@@ -252,17 +278,21 @@ class Volume(Resource):
         string="id is {} data is {}".format(id, body)
         return string,400
     def delete(self, vol_id):
-	notify=notify_dir+vol_id
+	    notify=notify_dir+vol_id
         infi_vol_id=int(vol_id[-5:])
         #print "*** VOL ID IS {}".format(vol_id)
-        url="http://{}/api/rest/volumes/{}?approved=yes".format(ibox, infi_vol_id)
+        #ITAI 08/11/2018
+        #url="http://{}/api/rest/volumes/{}?approved=yes".format(ibox, infi_vol_id)
         #print "URL IS {}".format(url)
         try:
-            outp = requests.delete(url=url,auth=creds)
+            #outp = requests.delete(url=url,auth=creds)
+            volume=system.volumes.find(id=infi_vol_id)
+            vol_data=get_vol_data(volume)
+            volume.delete()
         except Exception as E:
             print E
             abort(500)
-        vol_data=get_vol_data(outp.json(),vol_id)
+        #ITAI 08/11/2018 vol_data=get_vol_data(outp.json(),vol_id)
         ret_data={}
         #ret_data['volume_id']=vol_data['volumes']['id']
         ret_data['volume_id']=vol_id
