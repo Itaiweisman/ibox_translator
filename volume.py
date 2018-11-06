@@ -131,7 +131,7 @@ def get_vol_data(volume):
 class VolumesList(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('pool_id', type=int, required=False, location='json',default=poolselect()['id'])
+        #self.reqparse.add_argument('pool_id', type=int, required=False, location='json',default=poolselect()['id'])
         self.reqparse.add_argument('name', type=str, required=True, location='json')
         self.reqparse.add_argument('provtype', type=str, required=False, location='json', default='THIN')
         self.reqparse.add_argument('size', type=int, required=True, location='json')
