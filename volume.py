@@ -191,8 +191,9 @@ class VolumesList(Resource):
             cur_vol=get_vol_data(volume)
 
             outp.append(cur_vol['volumes'])
-        print outp
-        return outp,'200'
+        #print outp
+        return_json['volumes']=outp
+        return return_json,'200'
     def post(self):
         #url="http://{}/api/rest/volumes".format(ibox)
         #args = self.reqparse.parse_args(
