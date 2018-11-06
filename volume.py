@@ -15,9 +15,7 @@ import subprocess
 from infi.dtypes.iqn import make_iscsi_name
 from time import gmtime, strftime
 
-#https://flask-restful.readthedocs.io/en/0.3.5/quickstart.html
 
-## V2 - Volume functions
 def get_host(system,host_name):
     name=host_name.replace(':','%')
     host=system.hosts.find(name=name).to_list()
@@ -104,16 +102,6 @@ def notify_rm(file):
 		notify_log_file=open(notify_log,'w')
 		notify.write("Failed to call notify, {}".fomrat(E))
 
-def add_metadata_old(vol_json):
-    ret_dict={}
-    vol_id=vol_json['result']['id']
-    vol_obj_list=system.volumes.find(id=vol_id).to_list()
-    if vol_obj_list:
-        vol_obj=vol_obj_list[0]
-        metadata=vol_obj.get_all_metadata()
-        for key in metadata.keys():
-            ret_dict[key]=metadata[key]
-    return ret_dict
 	
 def add_metadata(volume):
     ret_dict={}
@@ -123,47 +111,15 @@ def add_metadata(volume):
     return ret_dict
 
 
-def poolselect():
-    url="http://{}/api/rest/pools".format(ibox)
-    pools = requests.get(url=url,auth=creds)
-    return pools.json()['result'][-1]
-
-def get_vol_data_old(vol_data,vol_id):
-    return_json={}
-    return_json['volumes']={}
-    return_json['volumes'].update(add_metadata(vol_data))
-    #return_json['id'] = set_new_id(outp_json['result']['id'])
-    return_json['volumes']['id'] = vol_id
-    return_json['volumes']['size'] = new_size(int(vol_data['result']['size']))
-    return_json['volumes']['create_at'] = new_date(int(vol_data['result']['created_at']))
-    #return_json['volumes']['name'] = vol_data['result']['name']
-    return_json['volumes']['lun_id'] = vol_data['result']['id']
-    #return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
-    #return_json['volumes']['iscsi_init'] = iscsi_init
-    #return_json['volumes']['iscsi_init'] = iscsi_init
-    return_json['volumes']['service_id'] = service_id
-    return_json['volumes']['status'] = 'available'
-    if vol_data['result']['mapped']:
-        return_json['volumes']['attach_status'] = 'online'
-    else:
-        return_json['volumes']['attach_status'] = 'offline'
-    return 
-
 
 def get_vol_data(volume):
     return_json={}
     return_json['volumes']={}
-    #ITAI 08/11/2018 return_json['volumes'].update(add_metadata(vol_data))
     return_json['volumes'].update(add_metadata(volume))
-    #return_json['id'] = set_new_id(outp_json['result']['id'])
     return_json['volumes']['id'] = set_new_id(volume.get_id())
     return_json['volumes']['size'] = new_size(volume.get_size().bits/8/1024/1024/1024)
     return_json['volumes']['create_at'] = volume.get_created_at().format('YYYY-MM-DD HH:mm:ss')
-    #return_json['volumes']['name'] = vol_data['result']['name']
     return_json['volumes']['lun_id'] = volume.get_id()
-    #return_json['volumes']['iscsi_init'] = vol_data['result']['serial']
-    #return_json['volumes']['iscsi_init'] = iscsi_init
-    #return_json['volumes']['iscsi_init'] = iscsi_init
     return_json['volumes']['service_id'] = service_id
     return_json['volumes']['status'] = 'available'
     if volume.is_mapped():
@@ -181,14 +137,10 @@ class VolumesList(Resource):
         self.reqparse.add_argument('size', type=int, required=True, location='json')
         super(VolumesList, self).__init__()
     def get(self):
-        #url="http://{}/api/rest/volumes/{}".format(ibox, id)
-        #url="http://{}/api/rest/volumes".format(ibox)
-        #outp = requests.get(url=url,auth=HTTPBasicAuth('iscsi', '123456')).json()['result']
         outp=[]
         return_json={}
         volumes=system.volumes.to_list()
         for volume in volumes:
-            #print outp
             cur_vol=get_vol_data(volume)
 
             outp.append(cur_vol['volumes'])
@@ -196,32 +148,20 @@ class VolumesList(Resource):
         return_json['volumes']=outp
         return return_json,'200'
     def post(self):
-        #url="http://{}/api/rest/volumes".format(ibox)
-        #args = self.reqparse.parse_args(
-        #vol = {
-        #    'pool_id': args['pool_id'],
-        #    'name': args['name'],
-        #    'provtype': args['provtype'],
-        #    'size': args['size']*onegig
-        #}
-        #outp = requests.post(url=url,json=vol, auth=creds)
-        body=request.json
 
-        #print "this is body {}".format(body)
+        body=request.json
         for mandatory_key in mandatory_pars:
             if mandatory_key not in body['volumes']: ##1
                 print "mandatory_key {} can't be found".format(mandatory_key)
                 raise InvalidUsage('Mandatory key cannot be found', status_code=410)
         try:
-            #print "Creating a volume, size {}, name {}".format(body['size'],body['name'])
+
             new_name=generate_random_name(vol_name_length)
-            #volume=system.volumes.create(pool=pool,size=body['size']*GB,name=body['name'])
             volume=system.volumes.create(pool=pool,size=body['volumes']['size']*GB,name=new_name)
         except Exception as E:
         
             raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
         volume.set_metadata('name',body['volumes']['name'])
-        ## Itai ISCSI INIT SET
         volume.set_metadata('iscsi_init',body['volumes']['iscsi_init'])
         for optional_key in opts_pars:
             if optional_key in body['volumes']:
@@ -232,32 +172,25 @@ class VolumesList(Resource):
         notify=notify_dir+vol_new_id
         url="http://{}/api/rest/volumes/{}".format(ibox,volume.get_id())
         vol_infi_data=requests.get(url=url,auth=creds)
-        #print "INFI DATA****** {}".format(vol_infi_data)
         global iscsi_init
         global volume_type
         if 'iscsi_init' in body['volumes'].keys():
             iscsi_init=body['volumes']['iscsi_init']
         else:
             iscsi_init=''
-        #if 'volume_type' in body['volumes'].keys():
-        #    volume_type=body['volumes']['volume_type']
-        #else:
-        #    volume_type=''
-        #ITAI 08/11/18 vol_data=get_vol_data(vol_infi_data.json(), vol_new_id)
+
         vol_data=get_vol_data(volume)
         notify_vol={}
         notify_vol={"snapshot_id":"", "notify_type":"volume_create","status":"available","result":"success"}
         notify_vol['volume_id'] = vol_new_id
         notify_vol['create_at'] = vol_data['volumes']['create_at']
         try:
-            #print "notify is {}".format(notify)
             notify_f=open(notify,'w')
             notify_f.writelines(json.dumps(notify_vol))
             notify_f.close()
             notify_rm(notify)
         except Exception as E:
             str="Failed! {}".format(E)
-        #print str
             return str,400
 	vol_data['volumes']['status']='creating'
         return vol_data, 200
@@ -265,21 +198,13 @@ class VolumesList(Resource):
 class Volume(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-        #self.reqparse
     def get(self, vol_id):
-        #url="http://{}/api/rest/volumes/{}".format(ibox, id)
         infi_id=vol_id[-5:]
-        #url="http://{}/api/rest/volumes/{}".format(ibox, infi_id)
-        #print "URL IS {}".format(url)
-        #outp = requests.get(url=url,auth=creds)
-        #outp_json = outp.json()
         try:
             volume=system.volumes.find(id=infi_id)[0]
         except Exception: #outp_json['error'] or not outp_json['result']:
             return {},'404'
-        #ITAI 08/11/2018 return_json=get_vol_data(outp_json,vol_id)
         return_json=get_vol_data(volume)
-        #return outp.json() int(outp.status_code)
         return return_json, '200'
         
     def post(self, id):
@@ -294,21 +219,14 @@ class Volume(Resource):
     def delete(self, vol_id):
         notify=notify_dir+vol_id
         infi_vol_id=int(vol_id[-5:])
-        #print "*** VOL ID IS {}".format(vol_id)
-        #ITAI 08/11/2018
-        #url="http://{}/api/rest/volumes/{}?approved=yes".format(ibox, infi_vol_id)
-        #print "URL IS {}".format(url)
         try:
-            #outp = requests.delete(url=url,auth=creds)
             volume=system.volumes.find(id=infi_vol_id)
             vol_data=get_vol_data(volume)
             volume.delete()
         except Exception as E:
             print E
             abort(500)
-        #ITAI 08/11/2018 vol_data=get_vol_data(outp.json(),vol_id)
         ret_data={}
-        #ret_data['volume_id']=vol_data['volumes']['id']
         ret_data['volume_id']=vol_id
         ret_data['create_at']=vol_data['volumes']['create_at']
         ret_data['status']='deleted'
@@ -323,8 +241,6 @@ class Volume(Resource):
 	    	notify_rm(notify)
 	except Exception:
 	    	pass
-        #print str
-        #return "kuku",200
         time.sleep(5)
         return ret_data, int(outp.status_code)
 class VolumesAttachment(Resource):
@@ -390,7 +306,6 @@ class VolumeExpand(Resource):
             print "Caught Exception {}".format(E)
             return 500,"Exception"
         ret_data={}
-        #ret_data['volume_id']=vol_data['volumes']['id']
         ret_data['volume_id']=vol_id
         ret_data['snapshot_id']=''
         ret_data['status']='available'
