@@ -187,6 +187,7 @@ class VolumesList(Resource):
         outp={}
         volumes=system.volumes.to_list()
         for volume in volumes:
+            print outp
             outp.update(get_vol_data(volume))
             
         return outp,'200'
