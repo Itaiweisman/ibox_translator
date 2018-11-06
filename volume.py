@@ -274,7 +274,7 @@ class Volume(Resource):
         #ITAI 08/11/2018 return_json=get_vol_data(outp_json,vol_id)
         return_json=get_vol_data(volume)
         #return outp.json() int(outp.status_code)
-        return return_json, int(outp.status_code)
+        return return_json, '200'
         
     def post(self, id):
        pass
