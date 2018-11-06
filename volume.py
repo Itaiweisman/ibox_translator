@@ -185,6 +185,7 @@ class VolumesList(Resource):
         #url="http://{}/api/rest/volumes".format(ibox)
         #outp = requests.get(url=url,auth=HTTPBasicAuth('iscsi', '123456')).json()['result']
         outp=[]
+        return_json={}
         volumes=system.volumes.to_list()
         for volume in volumes:
             #print outp
