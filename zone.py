@@ -49,23 +49,26 @@ def encode_vol_by_id(**kwargs):
 	box_hexa=fix_str(box_hexa.replace('0x',''),box_serial_len)
 	vol=fix_str(vol,volume_id_len)
 	vol_id=pref+box_hexa+post+vol
-	print vol_id
-	print len(vol_id)
 	return vol_id
 
 def decode_vol_by_id(vol,vtype):
 	box='0x'+vol[19:23].replace('0','')
 	vol_id=int(vol[-5:])
 	box_val=get_box_by_par(par='serial_hexa',req=vtype,val=box)
-	print "box is {} volune is {}".format(box_val,vol_id)
-
+	#print "box is {} volune is {}".format(box_val,vol_id)
+	return box_val, vol_id
 zones=get_zones_data('zones.json')
-#pp.pprint(zones)
 set_box_hexa(zones)
-#pp.pprint(zones)
 
 get_box_by_par(par='name',req='box_ip',val='zoneA')
 #box_login(zones)
-pp.pprint(zones)
-encode_vol_by_id(val='ibox1499',id='110',type='box_ip')
-decode_vol_by_id('546c4f25-FFFF-FFFF-05db-34306c00110','box_ip')
+encoded=encode_vol_by_id(val='ibox1499',id='110',type='box_ip')
+print "encoded is {}".format(encoded)
+decoded,box=decode_vol_by_id('546c4f25-FFFF-FFFF-05db-34306c00110','box_ip')
+print "decoded box is {} and volume is {}".format(box,decoded)
+
+
+
+### OUTPUT
+#encoded is 546c4f25-FFFF-FFFF-05db-34306c00110
+#decoded box is 110 and volume is ibox1499
