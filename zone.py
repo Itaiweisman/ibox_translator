@@ -62,13 +62,18 @@ set_box_hexa(zones)
 
 get_box_by_par(par='name',req='box_ip',val='zoneA')
 #box_login(zones)
+
+
+
+######################
+
 encoded=encode_vol_by_id(val='ibox1499',id='110',type='box_ip')
 print "encoded is {}".format(encoded)
-decoded,box=decode_vol_by_id('546c4f25-FFFF-FFFF-05db-34306c00110','box_ip')
+box,decoded=decode_vol_by_id('546c4f25-FFFF-FFFF-05db-34306c00110','box_ip')
 print "decoded box is {} and volume is {}".format(box,decoded)
 
 
 
 ### OUTPUT
 #encoded is 546c4f25-FFFF-FFFF-05db-34306c00110
-#decoded box is 110 and volume is ibox1499
+#decoded box is ibox1499 and volume is 110
