@@ -66,13 +66,15 @@ creds = HTTPBasicAuth('admin', '123456')
 
 ### InfiniSDK Par/t
 #Creds=HTTPBasicAuth(cred)
-system=InfiniBox(ibox,cred)
-system.login()
-pool=system.pools.to_list()[0]
+#ITAI 08112018
+#system=InfiniBox(ibox,cred)
+#system.login()
+#pool=system.pools.to_list()[0]
+#ITAI 08112018
 ###
 # Constants
 onegig = 1000000000
-'/'service_id='d4a44b0a-e3c2-4fec-9a3c-1d2cb14328f9'
+service_id='d4a44b0a-e3c2-4fec-9a3c-1d2cb14328f9'
 date_format='YYYY-MM-DD HH:mm:ss'
 id_len=5
 opts_pars = { 'volume_type': '' , 'iscsi_init': '', 'image_id': '', 'bootable': 0, 'zone_code': 0}
@@ -276,8 +278,13 @@ class VolumesAttachment(Resource):
     def post(self):
         body=request.json
         status='success'
-        host=get_host(system,body['volume']['iscsi_init'])
+        #ITAI 08112018
+        ###host=get_host(system,body['volume']['iscsi_init'])
         for volume in body['volume']['volumes']:
+            #ITAI 08112018
+            system=decode_vol_by_id(volume,'ibox')
+            host=get_host(system,body['volume']['iscsi_init'])
+            #ITAI 08112018
             vol=system.volumes.find(id=volume['volume_id'][-5:]).to_list()
             if not vol:
                 pass
@@ -318,7 +325,8 @@ class VolumeExpand(Resource):
         #volume=body['volume']['volume_id']
         volume=vol_id
         new_size=body['volume']['size']
-
+        #ITAI 08112018
+        system=decode_vol_by_id(vol_id,'ibox')
         volume_object=system.volumes.find(id=vol_id[-5:]).to_list()
         if not volume_object:
             return 404,"Volume not found"
@@ -349,9 +357,9 @@ class VolumeExpand(Resource):
             pass
         return 200,"success"
     
-api.add_resource(VolumesList, "/api/v1/volumes")
-api.add_resource(VolumesAttachment, "/api/v1/volumes/attachment")
-api.add_resource(Volume, "/api/v1/volumes/<string:vol_id>")
-api.add_resource(VolumeExpand, "/api/v1/volumes/<string:vol_id>/expand")
-app.run(debug=True, port=8080, host='0.0.0.0')
+#api.add_resource(VolumesList, "/api/v1/volumes")
+#api.add_resource(VolumesAttachment, "/api/v1/volumes/attachment")
+#api.add_resource(Volume, "/api/v1/volumes/<string:vol_id>")
+#api.add_resource(VolumeExpand, "/api/v1/volumes/<string:vol_id>/expand")
+#app.run(debug=True, port=8080, host='0.0.0.0')
     
