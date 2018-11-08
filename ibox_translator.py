@@ -2,7 +2,18 @@ from flask import Flask, request,abort,jsonify
 from flask_restful import Api, Resource, reqparse
 from volume import *
 from zone import *
+import logging
+
+logging.basicConfig(filename='ibox_translator.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+zone_file='./zones.json'
 if __name__ == "__main__":
+	zoneset=get_zones_data(zone_file)
+	set_box_hexa(zoneset)
+	try:
+		ibox_login()
+	except Exception as E:
+		logging.error("unable to login to infinibox, aborting {}".format(E))
+
 	app = Flask(__name__)
 	api = Api(app)
 	api.add_resource(VolumesList, "/api/v1/volumes")
