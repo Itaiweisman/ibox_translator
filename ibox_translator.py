@@ -10,7 +10,7 @@ if __name__ == "__main__":
 	zoneset=get_zones_data(zone_file)
 	set_box_hexa(zoneset)
 	try:
-		ibox_login()
+		ibox_login(zoneset)
 	except Exception as E:
 		logging.error("unable to login to infinibox, aborting {}".format(E))
 
