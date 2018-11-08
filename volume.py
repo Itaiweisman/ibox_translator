@@ -72,8 +72,7 @@ pool=system.pools.to_list()[0]
 ###
 # Constants
 onegig = 1000000000
-id_str="546c4f25-FFFF-FFFF-ab9c-34306c4"
-service_id='d4a44b0a-e3c2-4fec-9a3c-1d2cb14328f9'
+'/'service_id='d4a44b0a-e3c2-4fec-9a3c-1d2cb14328f9'
 date_format='YYYY-MM-DD HH:mm:ss'
 id_len=5
 opts_pars = { 'volume_type': '' , 'iscsi_init': '', 'image_id': '', 'bootable': 0, 'zone_code': 0}
@@ -136,26 +135,43 @@ class VolumesList(Resource):
         self.reqparse.add_argument('provtype', type=str, required=False, location='json', default='THIN')
         self.reqparse.add_argument('size', type=int, required=True, location='json')
         super(VolumesList, self).__init__()
-    def get(self):
+    def get(self,zoneset):
         outp=[]
         return_json={}
-        volumes=system.volumes.to_list()
+        ## ITAI 081118
+        if 'iscsi_init' in request.args:
+            iscsi_filter=request.args['iscsi_init']
+        else:
+            iscsi_filter=False
+        volumes=[]
+        for box in zoneset['zones']:
+            volumes.extend(box['ibox'].volumes.to_list())
+        #volumes=system.volumes.to_list()
+        
         for volume in volumes:
-            cur_vol=get_vol_data(volume)
-
-            outp.append(cur_vol['volumes'])
+            if iscsi_filter and 'iscsi_init' in volume.get_all_metadata().keys() and volume.get_metadata_value('iscsi_init') != iscsi_filter:
+                continue 
+            else: 
+                cur_vol=get_vol_data(volume)
+                outp.append(cur_vol['volumes'])
+        ## ITAI 081118
         #print outp
         return_json['volumes']=outp
         return return_json,'200'
-    def post(self):
+    def post(self,zoneset):
 
         body=request.json
+
         for mandatory_key in mandatory_pars:
             if mandatory_key not in body['volumes']: ##1
                 print "mandatory_key {} can't be found".format(mandatory_key)
                 raise InvalidUsage('Mandatory key cannot be found', status_code=410)
         try:
-
+            ## ITAI 081118
+            system=get_box_by_par(par='name',req='ibox',val=body['zone_code'])
+            if not system:
+                return '',404
+            ## ITAI 081118
             new_name=generate_random_name(vol_name_length)
             volume=system.volumes.create(pool=pool,size=body['volumes']['size']*GB,name=new_name)
         except Exception as E:
@@ -168,7 +184,10 @@ class VolumesList(Resource):
                 volume.set_metadata(optional_key,body['volumes'][optional_key])
             else:
                 volume.set_metadata(optional_key,opts_pars[optional_key])
-        vol_new_id=set_new_id(volume.get_id())
+        ## ITAI 081118
+        #vol_new_id=set_new_id(volume.get_id())
+        vol_new_id=encode_vol_by_id(val=system.get_serial(),id=volune.get_id(),type='serial_dec')
+        ## ITAI 081118
         notify=notify_dir+vol_new_id
         url="http://{}/api/rest/volumes/{}".format(ibox,volume.get_id())
         vol_infi_data=requests.get(url=url,auth=creds)
@@ -199,7 +218,12 @@ class Volume(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
     def get(self, vol_id):
-        infi_id=vol_id[-5:]
+
+        #ITAI 08112018
+
+        ###infi_id=vol_id[-5:]
+        system,vol=decode_vol_by_id(vol_id,'ibox')
+        #ITAI 08112018
         try:
             volume=system.volumes.find(id=infi_id)[0]
         except Exception: #outp_json['error'] or not outp_json['result']:
@@ -218,7 +242,9 @@ class Volume(Resource):
         return string,400
     def delete(self, vol_id):
         notify=notify_dir+vol_id
-        infi_vol_id=int(vol_id[-5:])
+        #ITAI 08112018
+        ###infi_vol_id=int(vol_id[-5:])
+        system,vol=decode_vol_by_id(vol_id,'ibox')
         try:
             volume=system.volumes.find(id=infi_vol_id)
             vol_data=get_vol_data(volume)
