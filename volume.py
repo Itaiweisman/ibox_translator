@@ -137,7 +137,7 @@ class VolumesList(Resource):
         self.reqparse.add_argument('provtype', type=str, required=False, location='json', default='THIN')
         self.reqparse.add_argument('size', type=int, required=True, location='json')
         super(VolumesList, self).__init__()
-    def get(self,zoneset):
+    def get(self):
         outp=[]
         return_json={}
         ## ITAI 081118
