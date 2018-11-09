@@ -23,13 +23,22 @@ def get_box_by_par(**kwargs):
             return zone[kwargs['req']]
 
 
-def box_login(zones):
+def box_login(zones,action):
  	for zone in zones['zones']:
  		try:
- 			ibox=InfiniBox(zone['box_ip'],(zone['box_user'],zone['box_password']))
- 			ibox.login()
- 			print ibox.get_name()
- 			zone['ibox']=ibox
+ 			
+ 			if action == 'login':
+ 				ibox=InfiniBox(zone['box_ip'],(zone['box_user'],zone['box_password']))
+ 				ibox.login()
+ 				print ibox.get_name()
+ 				zone['ibox']=ibox
+ 			elif action == 'logout':
+ 				#ibox=InfiniBox(zone['ibox'],(zone['box_user'],zone['box_password']))
+ 				zone['ibox'].logout()
+ 				zone['ibox']=None
+ 				print "logged out"
+ 			else:
+ 				print "invalid action {}".format(action)
  		except Exception as E:
  			zone['ibox']=repr(E)
 
@@ -63,7 +72,9 @@ def decode_vol_by_id(vol,vtype):
 scriptpath = os.path.dirname(os.path.abspath(__file__))
 zones=get_zones_data('zones.json')
 set_box_hexa(zones)
-
+#box_login(zones,'login')
+#box_login(zones,'logout')
+#print zones['zones'][0]['ibox']
 # get_box_by_par(par='name',req='box_ip',val='zoneA')
 # encoded=encode_vol_by_id(val='ibox1499',id='110',type='box_ip')
 # print "encoded is {}".format(encoded)

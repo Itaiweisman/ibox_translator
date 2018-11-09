@@ -25,6 +25,14 @@ except Exception as E:
     #logging.error("unable to login to infinibox, aborting {}".format(E))
     exit(5)
 
+### Wrapper 
+def loggin_in_out(func):
+    def wrapper(*args,**kwargs):
+        box_login(zoneset,'login')
+        func(*args,**kwargs)
+        box_login(zoneset,'logout')
+    return wrapper
+
 def get_host(system,host_name):
     name=host_name.replace(':','%')
     host=system.hosts.find(name=name).to_list()
@@ -146,6 +154,7 @@ class VolumesList(Resource):
         self.reqparse.add_argument('provtype', type=str, required=False, location='json', default='THIN')
         self.reqparse.add_argument('size', type=int, required=True, location='json')
         super(VolumesList, self).__init__()
+    @loggin_in_out
     def get(self):
         outp=[]
         return_json={}
