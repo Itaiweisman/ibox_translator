@@ -7,7 +7,7 @@ urllib3.disable_warnings()
 import arrow
 from infinisdk import InfiniBox
 from capacity import GB,GiB
-
+from zone import *
 import time
 import random, string
 import json
