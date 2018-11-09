@@ -19,11 +19,12 @@ zone_file='./zones.json'
 global zoneset
 zoneset=get_zones_data(zone_file)
 set_box_hexa(zoneset)
-try:
-    box_login(zoneset)
-except Exception as E:
+#try:
+#    box_login(zoneset)
+#except Exception as E:
     #logging.error("unable to login to infinibox, aborting {}".format(E))
-    exit(5)
+#    print E
+#    exit(5)
 
 ### Wrapper 
 def loggin_in_out(func):
