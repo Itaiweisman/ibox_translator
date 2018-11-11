@@ -178,10 +178,10 @@ class VolumesList(Resource):
                 cur_vol=get_vol_data(volume)
                 #print "cur vol is {} and its type is {}".format(cur_vol,type(cur_vol))
                 #print "*******"
-                print len(outp)
+                #print len(outp)
                 outp.append(cur_vol['volumes'])
         ## ITAI 081118
-        #print outp
+        print outp
         return_json['volumes']=outp
         return return_json,'200'
     def post(self,zoneset):
