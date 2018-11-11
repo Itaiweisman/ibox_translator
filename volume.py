@@ -31,6 +31,7 @@ def loggin_in_out(func):
     def wrapper(*args,**kwargs):
         box_login(zoneset,'login')
         return func(*args,**kwargs)
+        print "logging out"
         box_login(zoneset,'logout')
     return wrapper
 
@@ -184,7 +185,9 @@ class VolumesList(Resource):
         #print outp
         return_json['volumes']=outp
         return return_json,'200'
-    def post(self,zoneset):
+    
+    @loggin_in_out
+    def post(self):
 
         body=request.json
 
@@ -243,6 +246,9 @@ class VolumesList(Resource):
 class Volume(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
+    
+
+    @loggin_in_out
     def get(self, vol_id):
 
         #ITAI 08112018
@@ -299,6 +305,7 @@ class VolumesAttachment(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
 
+    @loggin_in_out    
     def post(self):
         body=request.json
         status='success'
