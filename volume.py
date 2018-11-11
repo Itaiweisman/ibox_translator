@@ -30,7 +30,7 @@ set_box_hexa(zoneset)
 def loggin_in_out(func):
     def wrapper(*args,**kwargs):
         box_login(zoneset,'login')
-        func(*args,**kwargs)
+        return func(*args,**kwargs)
         box_login(zoneset,'logout')
     return wrapper
 
