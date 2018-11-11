@@ -181,9 +181,9 @@ class VolumesList(Resource):
                 #print len(outp)
                 outp.append(cur_vol['volumes'])
         ## ITAI 081118
-        print outp
+        #print outp
         return_json['volumes']=outp
-        return return_json,'200'
+        return outp,'200'
     def post(self,zoneset):
 
         body=request.json
