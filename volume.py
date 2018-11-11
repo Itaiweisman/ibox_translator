@@ -166,7 +166,7 @@ class VolumesList(Resource):
             iscsi_filter=False
         volumes=[]
         for box in zoneset['zones']:
-            print "box is {}".format(box['ibox'].get_name())
+            #print "box is {}".format(box['ibox'].get_name())
             volumes.extend(box['ibox'].volumes.to_list())
         #volumes=system.volumes.to_list()
         
@@ -174,8 +174,10 @@ class VolumesList(Resource):
             if iscsi_filter and 'iscsi_init' in volume.get_all_metadata().keys() and volume.get_metadata_value('iscsi_init') != iscsi_filter:
                 continue 
             else: 
-                print "vol is {}".format(volume.get_name())
+               # print "vol is {}".format(volume.get_name())
                 cur_vol=get_vol_data(volume)
+                print "cur vol is {} and its type is {}".format(cur_vol,type(cur_vol))
+                print "*******"
                 outp.append(cur_vol['volumes'])
         ## ITAI 081118
         #print outp
