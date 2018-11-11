@@ -174,6 +174,7 @@ class VolumesList(Resource):
             if iscsi_filter and 'iscsi_init' in volume.get_all_metadata().keys() and volume.get_metadata_value('iscsi_init') != iscsi_filter:
                 continue 
             else: 
+                print "vol is {}".format(volume.get_name())
                 cur_vol=get_vol_data(volume)
                 outp.append(cur_vol['volumes'])
         ## ITAI 081118
