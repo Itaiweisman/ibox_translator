@@ -1,0 +1,7 @@
+{
+	 "zones": [ {"name":"zoneA", "serial_dec": 1095, "box_ip":"192.168.0.30", "box_user":"admin", "box_password":"123456","openstack_glance":"192.168.1.10"} ,
+
+{"name":"zoneB","serial_dec": 1530, "box_ip":"192.168.10.1", "box_user":"admin", "box_password":"123456","openstack_glance":"192.168.2.10"} 
+
+	 ]	
+}
