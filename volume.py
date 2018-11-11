@@ -166,6 +166,7 @@ class VolumesList(Resource):
             iscsi_filter=False
         volumes=[]
         for box in zoneset['zones']:
+            print "box is {}".format(box.get_name())
             volumes.extend(box['ibox'].volumes.to_list())
         #volumes=system.volumes.to_list()
         
