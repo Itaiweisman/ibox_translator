@@ -176,8 +176,9 @@ class VolumesList(Resource):
             else: 
                # print "vol is {}".format(volume.get_name())
                 cur_vol=get_vol_data(volume)
-                print "cur vol is {} and its type is {}".format(cur_vol,type(cur_vol))
-                print "*******"
+                #print "cur vol is {} and its type is {}".format(cur_vol,type(cur_vol))
+                #print "*******"
+                print len(outp)
                 outp.append(cur_vol['volumes'])
         ## ITAI 081118
         #print outp
