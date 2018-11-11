@@ -183,7 +183,7 @@ class VolumesList(Resource):
         ## ITAI 081118
         #print outp
         return_json['volumes']=outp
-        return outp,'200'
+        return return_json,'200'
     def post(self,zoneset):
 
         body=request.json
