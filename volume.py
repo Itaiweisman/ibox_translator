@@ -136,8 +136,9 @@ def get_vol_data(volume):
     return_json={}
     return_json['volumes']={}
     return_json['volumes'].update(add_metadata(volume))
-    return_json['volumes']['id'] = set_new_id(volume.get_id())
-    return_json['volumes']['size'] = new_size(volume.get_size().bits/8/1024/1024/1024)
+    #return_json['volumes']['id'] = set_new_id(volume.get_id())
+    #return_json['volumes']['id']=encode_vol_by_id(val=volume)
+    return_json['volumes']['size'] = volume.get_size().bits/8/1000000000
     return_json['volumes']['create_at'] = volume.get_created_at().format('YYYY-MM-DD HH:mm:ss')
     return_json['volumes']['lun_id'] = volume.get_id()
     return_json['volumes']['service_id'] = service_id
@@ -156,6 +157,7 @@ class VolumesList(Resource):
         self.reqparse.add_argument('provtype', type=str, required=False, location='json', default='THIN')
         self.reqparse.add_argument('size', type=int, required=True, location='json')
         super(VolumesList, self).__init__()
+   
     @loggin_in_out
     def get(self):
         outp=[]
@@ -190,24 +192,30 @@ class VolumesList(Resource):
     def post(self):
 
         body=request.json
-
         for mandatory_key in mandatory_pars:
             if mandatory_key not in body['volumes']: ##1
                 print "mandatory_key {} can't be found".format(mandatory_key)
                 raise InvalidUsage('Mandatory key cannot be found', status_code=410)
-        try:
+        #try:
             ## ITAI 081118
-            system=get_box_by_par(par='name',req='ibox',val=body['zone_code'])
-            if not system:
-                return '',404
+ 	print "zoneset {} looking for {}".format(zoneset,body['volumes']['zone_code'])
+        system=get_box_by_par(par="name",req="ibox",val=body['volumes']['zone_code'],zones=zoneset)
+        print "******* found {}".format(system.get_name())
+        pool=system.pools.to_list()[0]
+        print "system is {}, pool is {}".format(system.get_name(),pool.get_name())
+        if not system:
+            return '',404
             ## ITAI 081118
-            new_name=generate_random_name(vol_name_length)
-            volume=system.volumes.create(pool=pool,size=body['volumes']['size']*GB,name=new_name)
-        except Exception as E:
-        
-            raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
+        new_name=generate_random_name(vol_name_length)
+        volume=system.volumes.create(pool=pool,size=body['volumes']['size']*GB,name=new_name)
+        #except Exception as E:
+        ##    print "exception is {}".format(E)
+        #    raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
         volume.set_metadata('name',body['volumes']['name'])
         volume.set_metadata('iscsi_init',body['volumes']['iscsi_init'])
+        new_id=encode_vol_by_id(val=system,id=volume.get_id(),type='ibox',zones=zoneset)
+        print ">>>> new id is {}".format(new_id)
+        volume.set_metadata('id',new_id)
         for optional_key in opts_pars:
             if optional_key in body['volumes']:
                 volume.set_metadata(optional_key,body['volumes'][optional_key])
@@ -215,10 +223,12 @@ class VolumesList(Resource):
                 volume.set_metadata(optional_key,opts_pars[optional_key])
         ## ITAI 081118
         #vol_new_id=set_new_id(volume.get_id())
-        vol_new_id=encode_vol_by_id(val=system.get_serial(),id=volune.get_id(),type='serial_dec')
+        #vol_new_id=encode_vol_by_id(val=system.get_serial(),id=volume.get_id(),type='serial_dec')
+        #print "new id: {}".format(vol_new_id)
         ## ITAI 081118
-        notify=notify_dir+vol_new_id
-        url="http://{}/api/rest/volumes/{}".format(ibox,volume.get_id())
+        notify=notify_dir+new_id
+        url="http://{}/api/rest/volumes/{}".format(system.get_name(),volume.get_id())
+        print "url is {}".format(url)
         vol_infi_data=requests.get(url=url,auth=creds)
         global iscsi_init
         global volume_type
@@ -226,11 +236,13 @@ class VolumesList(Resource):
             iscsi_init=body['volumes']['iscsi_init']
         else:
             iscsi_init=''
-
+        print "getting vol data"
         vol_data=get_vol_data(volume)
+        print "vol data is {}".format(vol_data)
         notify_vol={}
         notify_vol={"snapshot_id":"", "notify_type":"volume_create","status":"available","result":"success"}
-        notify_vol['volume_id'] = vol_new_id
+        #notify_vol['volume_id'] = vol_new_id
+        notify_vol['volume_id']=new_id
         notify_vol['create_at'] = vol_data['volumes']['create_at']
         try:
             notify_f=open(notify,'w')
@@ -254,12 +266,14 @@ class Volume(Resource):
         #ITAI 08112018
 
         ###infi_id=vol_id[-5:]
-        system,vol=decode_vol_by_id(vol_id,'ibox')
+        system,vol=decode_vol_by_id(vol_id,'ibox',zoneset)
         #ITAI 08112018
         try:
-            volume=system.volumes.find(id=infi_id)[0]
+            print "looking on {} for {}".format(system.get_name(), vol)
+            volume=system.volumes.find(id=vol)[0]
         except Exception: #outp_json['error'] or not outp_json['result']:
             return {},'404'
+        #print "found vol {}".format(vol.get_name())
         return_json=get_vol_data(volume)
         return return_json, '200'
         
@@ -272,15 +286,23 @@ class Volume(Resource):
 	print body.keys()
         string="id is {} data is {}".format(id, body)
         return string,400
+    
+    @loggin_in_out
     def delete(self, vol_id):
         notify=notify_dir+vol_id
+        #print "in volume deletion"
         #ITAI 08112018
         ###infi_vol_id=int(vol_id[-5:])
-        system,vol=decode_vol_by_id(vol_id,'ibox')
+        system,vol=decode_vol_by_id(vol_id,'ibox',zoneset)
+        print "for deletion - volume {} in box {}".format(int(vol),system)
         try:
-            volume=system.volumes.find(id=infi_vol_id)
-            vol_data=get_vol_data(volume)
-            volume.delete()
+            volume=system.volumes.find(id=int(vol))
+            #print "found for deletion {}".format(volume.get_id())
+            if volume:
+                vol_data=get_vol_data(volume[0])
+                volume[0].delete()
+            else: 
+                return {},'200'
         except Exception as E:
             print E
             abort(500)
@@ -300,7 +322,7 @@ class Volume(Resource):
 	except Exception:
 	    	pass
         time.sleep(5)
-        return ret_data, int(outp.status_code)
+        return ret_data, '200'
 class VolumesAttachment(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -348,20 +370,22 @@ class VolumesAttachment(Resource):
 class VolumeExpand(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-
+    
+    @loggin_in_out        
     def post(self,vol_id):
         body=request.json
         print "body is {}".format(body)
         print "id is {}".format(vol_id)
         #volume=body['volume']['volume_id']
         volume=vol_id
-        new_size=body['volume']['size']
+        new_size=int(body['volume']['size'])
         #ITAI 08112018
-        system=decode_vol_by_id(vol_id,'ibox')
-        volume_object=system.volumes.find(id=vol_id[-5:]).to_list()
+        system,vol_inf_id=decode_vol_by_id(vol_id,'ibox',zoneset)
+        volume_object=system.volumes.find(id=vol_inf_id).to_list()
         if not volume_object:
             return 404,"Volume not found"
-        volume_size=volume_object[0].get_size().bits/8/1024/1024/1024
+        volume_size=volume_object[0].get_size().bits/8/1000000000
+        print "volume size is {} new size is {}".format(volume_size,new_size)
         if volume_size > new_size:
             return 405,"Volume is already bigger"
         cap_to_resize=(new_size-volume_size)*GB
