@@ -3,7 +3,6 @@ from flask_restful import Api, Resource, reqparse
 from volume import *
 from zone import *
 import logging
-print "XX"
 logging.basicConfig(filename='ibox_translator.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 zone_file='./zones.json'
 if __name__ == "__main__":

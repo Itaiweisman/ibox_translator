@@ -21,13 +21,13 @@ def set_box_hexa(zones):
 
 def get_box_by_par(**kwargs):
 	zs=kwargs['zones']
-	pp.pprint(kwargs)
-	print ">>>>>> zs is"
-	pp.pprint(zs)
+	#pp.pprint(kwargs)
+	#print ">>>>>> zs is"
+	#pp.pprint(zs)
         #for zone in zones['zones']:
         #print ""
         for zone in zs['zones']:
-        	print "comparing {} to {}".format(zone[kwargs['par']], kwargs['val'])
+        	#print "comparing {} to {}".format(zone[kwargs['par']], kwargs['val'])
 	        if zone[kwargs['par']] == kwargs['val']:
        	            return zone[kwargs['req']]
         	
@@ -41,13 +41,13 @@ def box_login(zones,action):
  			if action == 'login':
  				ibox=InfiniBox(zone['box_ip'],(zone['box_user'],zone['box_password']))
  				ibox.login()
- 				print ibox.get_name()
+ 				#print ibox.get_name()
  				zone['ibox']=ibox
  			elif action == 'logout':
  				#ibox=InfiniBox(zone['ibox'],(zone['box_user'],zone['box_password']))
  				zone['ibox'].logout()
  				zone['ibox']=None
- 				print "logged out"
+ 				#print "logged out"
  			else:
  				print "invalid action {}".format(action)
  		except Exception as E:
@@ -71,7 +71,7 @@ def encode_vol_by_id(**kwargs):
 	box_hexa=get_box_by_par(par=req_type,req='serial_hexa',val=box,zones=zones)
 	box_hexa=fix_str(box_hexa.replace('0x',''),box_serial_len)
 	vol=fix_str(vol, volume_id_len)
-	print "returning {}".format(vol)
+	#$print "returning {}".format(vol)
 	vol_id=id_str.format(box_hexa, vol)
 	return vol_id
 
@@ -85,7 +85,7 @@ def decode_vol_by_id(vol,vtype,zones):
 
 scriptpath = os.path.dirname(os.path.abspath(__file__))
 zones=get_zones_data('./zones.json')
-print zones
+#print zones
 set_box_hexa(zones)
 #box_login(zones,'login')
 #box_login(zones,'logout')
