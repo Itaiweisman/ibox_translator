@@ -8,6 +8,15 @@ volume_id_len=12
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
+
+#def loggin_in_out(func):
+ #   def wrapper(*args,**kwargs):
+ #       box_login(zoneset,'login')
+ #       return func(*args,**kwargs)
+        #print "logging out"
+ #       box_login(zoneset,'logout')
+ #   return wrapper
+
 def get_zones_data (zone_file):
     with open('{}/{}'.format(scriptpath, zone_file)) as f:
         zones_data=json.load(f)
@@ -84,9 +93,9 @@ def decode_vol_by_id(vol,vtype,zones):
 
 
 scriptpath = os.path.dirname(os.path.abspath(__file__))
-zones=get_zones_data('./zones.json')
+#zones=get_zones_data('./zones.json')
 #print zones
-set_box_hexa(zones)
+#set_box_hexa(zones)
 #box_login(zones,'login')
 #box_login(zones,'logout')
 #print zones['zones'][0]['ibox']
