@@ -1,20 +1,11 @@
 {
 	"zones": [{
 			"name": "zoneA",
-			"serial_dec": 360,
-			"box_ip": "ktbox1",
+			"serial_dec": 30095,
+			"box_ip": "ibox1",
 			"box_user": "admin",
 			"box_password": "123456",
-			"openstack_glance": "192.168.1.10"
-		},
-
-		{
-			"name": "zoneB",
-			"serial_dec": 361,
-			"box_ip": "ktbox2",
-			"box_user": "admin",
-			"box_password": "123456",
-			"openstack_glance": "192.168.2.10"
+			"openstack_glance": "192.168.0.3"
 		}
 
 	]

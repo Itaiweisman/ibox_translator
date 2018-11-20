@@ -1,6 +1,7 @@
 from flask import Flask, request,abort,jsonify
 from flask_restful import Api, Resource, reqparse
 from volume import *
+from glance import *
 from zone import *
 import logging
 logging.basicConfig(filename='ibox_translator.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
@@ -22,4 +23,6 @@ if __name__ == "__main__":
 	api.add_resource(VolumesAttachment, "/api/v1/volumes/attachment")
 	api.add_resource(Volume, "/api/v1/volumes/<string:vol_id>")
 	api.add_resource(VolumeExpand, "/api/v1/volumes/<string:vol_id>/expand")
+	api.add_resource(ImagesList, "/api/v1/images")
+	api.add_resource(Image, "/api/v1/images/<reqid>")	
 	app.run(debug=True, port=8080, host='0.0.0.0')

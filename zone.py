@@ -93,7 +93,7 @@ def decode_vol_by_id(vol,vtype,zones):
 
 
 scriptpath = os.path.dirname(os.path.abspath(__file__))
-#zones=get_zones_data('./zones.json')
+zones=get_zones_data('./zones.json')
 #print zones
 #set_box_hexa(zones)
 #box_login(zones,'login')

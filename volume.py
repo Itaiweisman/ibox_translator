@@ -169,7 +169,7 @@ class VolumesList(Resource):
             iscsi_filter=False
         volumes=[]
         for box in zoneset['zones']:
-            #print "box is {}".format(box['ibox'].get_name())
+            print "box is {}".format(box['ibox'])
             volumes.extend(box['ibox'].volumes.to_list())
         #volumes=system.volumes.to_list()
         
