@@ -3,15 +3,13 @@ from flask_restful import Api, Resource, reqparse
 from volume import *
 from zone import *
 import logging
-print "XX"
 logging.basicConfig(filename='ibox_translator.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 zone_file='./zones.json'
-print "XX"+__name__
 if __name__ == "__main__":
-	print "here"
 	global zoneset
 	zoneset=get_zones_data(zone_file)
-	set_box_hexa(zoneset)
+	zoneset=set_box_hexa(zoneset)
+
 #	try:
 #		box_login(zoneset)
 #	except Exception as E:
