@@ -88,7 +88,9 @@ class NotifyRM(Thread):
     def run(self):
         time.sleep(10)
         outp = format_notify(self.data)
-        print(outp)
+	pheaders = {'content-type': "application/json"}
+	requests.post(url='http://221.148.108.21:8050/syncpc/storage-resp.do', auth=('admin', '123456'), headers=pheaders, json=outp)        
+	print(outp)
 
 
 class SnapsList(Resource):
