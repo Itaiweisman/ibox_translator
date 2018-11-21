@@ -6,6 +6,14 @@
 			"box_user": "admin",
 			"box_password": "123456",
 			"openstack_glance": "192.168.0.3"
+		},
+		{
+		        "name": "zoneB",
+                        "serial_dec": 36002,
+                        "box_ip": "ibox2",
+                        "box_user": "admin",
+                        "box_password": "123456",
+                        "openstack_glance": "192.168.0.200"
 		}
 
 	]
