@@ -20,9 +20,6 @@ def get_params(vol_id):
     box_login(zones, 'login')
     box, volume_id = decode_vol_by_id(vol=vol_id, vtype='box_ip', zones=zones)
     ibox=get_box_by_par(par='box_ip',req='ibox',val=box, zones=zones)
-    #u,p = box_auth(box)
-    #ibox = InfiniBox(box, (u,p))
-    #ibox.login()
     box, volume_id = decode_vol_by_id(vol_id, 'box_ip',zones=zones)
     ibox=get_box_by_par(par='box_ip',req='ibox',val=box,zones=zones)
     return ibox, volume_id
@@ -188,7 +185,6 @@ class SnapAttach(Resource):
                     outp=format_mapping(body, snap)
             else:
                 return 'wrong action', 404
-        return 200
         return outp, 200
 
     
