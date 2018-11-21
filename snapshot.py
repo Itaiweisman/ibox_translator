@@ -3,7 +3,7 @@ from flask_restful import Api, Resource, reqparse
 import requests
 from time import strftime, localtime
 from requests.auth import HTTPBasicAuth
-from zones import get_zones_data, encode_vol_by_id, decode_vol_by_id, box_auth, box_login, get_box_by_par, zones
+from zone import get_zones_data, encode_vol_by_id, decode_vol_by_id, box_auth, box_login, get_box_by_par, zones
 import urllib3
 import random, string, time
 from infinisdk import InfiniBox
@@ -12,17 +12,14 @@ urllib3.disable_warnings()
 
 # need to add relevant changes to URLs when quering for zone_code
 
-app = Flask(__name__)
-api = Api(app)
-
 name_len=10
 generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 
 def get_params(vol_id):
     box_login(zones, 'login')
-    box, volume_id = decode_vol_by_id(vol_id, 'box_ip')
-    ibox=get_box_by_par(par='box_ip',req='ibox',val=box)
+    box, volume_id = decode_vol_by_id(vol=vol_id, vtype='box_ip', zones=zones)
+    ibox=get_box_by_par(par='box_ip',req='ibox',val=box, zones=zones)
     #u,p = box_auth(box)
     #ibox = InfiniBox(box, (u,p))
     #ibox.login()
@@ -172,12 +169,4 @@ class SnapAttach(Resource):
                 return 'wrong action', 404
         #
         return 200
-
-api.add_resource(SnapsList, "/api/v1/volumes/<vol_id>/snapshots")
-api.add_resource(SnapDel, "/api/v1/volumes/<vol_id>/snapshots/<snap_id>")
-api.add_resource(SnapRestore, "/api/v1/volumes/<vol_id>/snapshots/<snap_id>/action")
-api.add_resource(SnapAttach, "/api/v1/volumes/snapshots/attachment")
-
-if __name__ == '__main__':
-    app.run(debug=True, port=8080)
     

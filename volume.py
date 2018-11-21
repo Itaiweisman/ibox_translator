@@ -191,6 +191,7 @@ class VolumesList(Resource):
     @loggin_in_out
     def post(self):
 
+        #body=request.json
         body=request.json
         for mandatory_key in mandatory_pars:
             if mandatory_key not in body['volumes']: ##1
