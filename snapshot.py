@@ -23,6 +23,8 @@ def get_params(vol_id):
     #u,p = box_auth(box)
     #ibox = InfiniBox(box, (u,p))
     #ibox.login()
+    box, volume_id = decode_vol_by_id(vol_id, 'box_ip',zones=zones)
+    ibox=get_box_by_par(par='box_ip',req='ibox',val=box,zones=zones)
     return ibox, volume_id
   
 
@@ -63,6 +65,24 @@ def format_notify(data):
     }
     return todict
 
+def format_mapping(data, snap):
+    todict={  
+    "snapshotAction":{  
+        "snapshots":[  
+            {  
+                "order":snap['order'],
+                "snapshot_id":snap['snapshot_id'],
+                "volume_id":snap["volume_id"]
+            }
+        ],
+        "action":data['snapshot']["action"],
+        "status":"success",
+        "iscsi_init":data['snapshot']["iscsi_init"]
+        }
+    }
+    return todict
+
+
 class NotifyRM(Thread):
     def __init__(self, data):
         Thread.__init__(self)
@@ -91,14 +111,18 @@ class SnapsList(Resource):
         snap_dict = {"snapshots":snap_list}
         return snap_dict, 200
     def post(self, vol_id):
-        self.reqparse.add_argument('name', type=str, required=True, location='json')
-        self.reqparse.add_argument('desc', type=str, required=True, location='json')
-        reqargs = self.reqparse.parse_args()
+	top = reqparse.RequestParser()
+        top.add_argument('snapshot', type=dict)
+        top_args = top.parse_args()
+        bot = reqparse.RequestParser()
+        bot.add_argument('name', type=str, location=('snapshot',), required=True)
+        bot.add_argument('desc', type=str, location=('snapshot',), required=True)
+        bot_parse = bot.parse_args(req=top_args)       
         ibox, volume_id = get_params(vol_id)
         v1=(ibox.volumes.get_by_id(volume_id)).create_snapshot(name=generate_random_name(name_len))
         if v1:
-            v1.set_metadata('desc', reqargs['desc'])
-            v1.set_metadata('name', reqargs['name'])
+            v1.set_metadata('desc', bot_parse['desc'])
+            v1.set_metadata('name', bot_parse['name'])
             outm=v1.get_all_metadata()
             snap_dict=format_snap(v1, outm, status='creating')
         else:
@@ -146,27 +170,25 @@ class SnapAttach(Resource):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('ServiceCode', type=str, required=True, location='headers')
         self.reqparse.add_argument('ServiceKey', type=str, required=True, location='headers')
-        self.reqparse.add_argument('volume_id', type=str, required=True, location='json')
-        self.reqparse.add_argument('snapshot_id', type=str, required=True, location='json')
-        self.reqparse.add_argument('iscsi_init', type=str, required=True, location='json')
-        self.reqparse.add_argument('order', type=int, required=True, location='json')
-        self.reqparse.add_argument('action', type=str, required=True, location='json')
         # self.reqparse.add_argument('zone_code', type=str, required=False, location='json')
         super(SnapAttach, self).__init__()
     def post(self):
-        reqargs = self.reqparse.parse_args()
-        # ibox, volume_id = get_params(reqargs['volume_id'])
-        ibox, snapshot_id = get_params(reqargs['snapshot_id'])
-        # vol=ibox.volumes.get_by_id(volume_id)
-        snap=ibox.volumes.get_by_id(snapshot_id)
-        host=ibox.hosts.get_host_by_initiator_address(reqargs['iscsi_init'])
-        if host and snap:
-            if reqargs['action'] == 'ATTACH':
-                host.map_volume(snap, lun=reqargs['order'])   
-            elif reqargs['action'] == 'DETACH':
-                host.unmap_volume(snap)   
+        body=request.json
+        for snap in body['snapshot']['snapshots']:
+            ibox, volume_id = get_params(snap['volume_id'])
+            ibox, snapshot_id = get_params(snap['snapshot_id'])
+            snapid=ibox.volumes.get_by_id(snapshot_id)
+            host=ibox.hosts.get_host_by_initiator_address(body['snapshot']['iscsi_init'])
+            if host and snapid:
+                if body['snapshot']['action'] == 'ATTACH':
+                    host.map_volume(snapid, lun=snap['order'])   
+                    outp=format_mapping(body, snap)
+                elif body['snapshot']['action'] == 'DETACH':
+                    host.unmap_volume(snapid)   
+                    outp=format_mapping(body, snap)
             else:
                 return 'wrong action', 404
-        #
         return 200
+        return outp, 200
+
     
