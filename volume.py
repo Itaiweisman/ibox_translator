@@ -8,6 +8,7 @@ import arrow
 from infinisdk import InfiniBox
 from capacity import GB,GiB
 from zone import *
+from shared import *
 import time
 import random, string
 import json
@@ -77,9 +78,9 @@ class InvalidUsage(Exception):
 loggedout_attempts=3
 loggedout_interval=3
 #ibox = "192.168.0.30"
-notify_dir = '/tmp/'
-notify_log = notify_dir+ "notify.log"
-notify_script = "./notify_rm.sh"
+#notify_dir = '/tmp/'
+#notify_log = notify_dir+ "notify.log"
+#notify_script = "./notify_rm.sh"
 #cred=('admin', '123456')
 creds = HTTPBasicAuth('admin', '123456')
 
@@ -103,7 +104,7 @@ vol_name_length=10
 
 
 ## Functions
-generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
+#generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 ts=lambda now: strftime("%Y-%m-%d %H:%M:%S", gmtime())
 new_size = lambda  size: size/1000/1000/1000 
 def new_date(date):
@@ -115,13 +116,13 @@ def set_new_id(id):
 	embedding_zeros=id_len-len(str(id))
 	new_id=id_str+embedding_zeros*"0"+str(id)
 	return new_id
-def notify_rm(file):
-	try:
-		return subprocess.Popen([notify_script,file])
-	except Exception as E:
-		notify_log_file=open(notify_log,'w')
-		notify.write("Failed to call notify, {}".fomrat(E))
-
+#def notify_rm(file):
+#	try:
+#		return subprocess.Popen([notify_script,file])
+#	except Exception as E:
+#		notify_log_file=open(notify_log,'w')
+#		notify.write("Failed to call notify, {}".fomrat(E))
+#
 	
 def add_metadata(volume):
     ret_dict={}
@@ -227,7 +228,7 @@ class VolumesList(Resource):
         #vol_new_id=encode_vol_by_id(val=system.get_serial(),id=volume.get_id(),type='serial_dec')
         #print "new id: {}".format(vol_new_id)
         ## ITAI 081118
-        notify=notify_dir+new_id
+        #notify=notify_dir+new_id
         url="http://{}/api/rest/volumes/{}".format(system.get_name(),volume.get_id())
         #print "url is {}".format(url)
         vol_infi_data=requests.get(url=url,auth=creds)
@@ -241,15 +242,18 @@ class VolumesList(Resource):
         vol_data=get_vol_data(volume)
         #print "vol data is {}".format(vol_data)
         notify_vol={}
-        notify_vol={"snapshot_id":"", "notify_type":"volume_create","status":"available","result":"success"}
+        #notify_vol={"snapshot_id":"", "notify_type":"volume_create","status":"available","result":"success"}
+	notify_vol={'volume_id':new_id, 'id':"", 'status':'available', 'notify_type':'volume_create'}
         #notify_vol['volume_id'] = vol_new_id
-        notify_vol['volume_id']=new_id
-        notify_vol['create_at'] = vol_data['volumes']['create_at']
+        #notify_vol['id']=new_id
+        #notify_vol['create_at'] = vol_data['volumes']['create_at']
         try:
-            notify_f=open(notify,'w')
-            notify_f.writelines(json.dumps(notify_vol))
-            notify_f.close()
-            notify_rm(notify)
+	    thread_a = NotifyRM(notify_vol)
+	    thread_a.start()            
+	   # notify_f=open(notify,'w')
+           # notify_f.writelines(json.dumps(notify_vol))
+           # notify_f.close()
+           # notify_rm(notify)
 	    #print "got until here"
         except Exception as E:
             str="Failed! {} ; notify is {}".format(E,notify)
@@ -292,7 +296,7 @@ class Volume(Resource):
     
     @loggin_in_out
     def delete(self, vol_id):
-        notify=notify_dir+vol_id
+        #notify=notify_dir+vol_id
         #print "in volume deletion"
         #ITAI 08112018
         ###infi_vol_id=int(vol_id[-5:])
@@ -309,19 +313,22 @@ class Volume(Resource):
         except Exception as E:
             print E
             abort(500)
-        ret_data={}
-        ret_data['volume_id']=vol_id
-        ret_data['create_at']=vol_data['volumes']['create_at']
-        ret_data['status']='deleted'
-        ret_data['result']='success'
-        ret_data['snapshot_id']=""
-        ret_data['notify_type']='volume_delete'
+        #ret_data={}
+        #ret_data['volume_id']=vol_id
+        #ret_data['create_at']=vol_data['volumes']['create_at']
+        #ret_data['status']='deleted'
+        #ret_data['result']='success'
+        #ret_data['snapshot_id']=""
+        #ret_data['notify_type']='volume_delete'
+	ret_data={'volume_id':vol_id, 'id':"", 'status':'deleted', 'notify_type':'volume_delete'}
         try:
         	print "notify is {}".format(notify)
-	    	notify_f=open(notify,'w')
-	    	notify_f.writelines(json.dumps(ret_data))
-	    	notify_f.close()
-	    	notify_rm(notify)
+		thread_b = NotifyRM(ret_data)
+		thread_b.start()	    	
+	#	notify_f=open(notify,'w')
+	#    	notify_f.writelines(json.dumps(ret_data))
+	#    	notify_f.close()
+	#    	notify_rm(notify)
 	except Exception:
 	    	pass
         time.sleep(5)
@@ -397,20 +404,22 @@ class VolumeExpand(Resource):
         except Exception as E:
             print "Caught Exception {}".format(E)
             return 500,"Exception"
-        ret_data={}
-        ret_data['volume_id']=vol_id
-        ret_data['snapshot_id']=''
-        ret_data['status']='available'
-        ret_data['result']='success'
-        ret_data['snapshot_id']=""
-        ret_data['notify_type']='volume_extend'
-        ret_data['create_at']=ts("now")
+        #ret_data={}
+        #ret_data['volume_id']=vol_id
+        #ret_data['snapshot_id']=''
+        #ret_data['status']='available'
+        #ret_data['result']='success'
+        #ret_data['notify_type']='volume_extend'
+        #ret_data['create_at']=ts("now")
+	ret_data={'volume_id':vol_id, 'id':"", 'status':'available', 'notify_type':'volume_extend'}
         try:
-            print "notify is {}".format(notify)
-            notify_f=open(notify,'w')
-            notify_f.writelines(json.dumps(ret_data))
-            notify_f.close()
-            notify_rm(notify)
+            #print "notify is {}".format(notify)
+	    thread_a = NotifyRM(ret_data)
+            thread_a.start()  
+ #           notify_f=open(notify,'w')
+ #           notify_f.writelines(json.dumps(ret_data))
+ #           notify_f.close()
+ #           notify_rm(notify)
         except Exception:
             pass
         return 200,"success"

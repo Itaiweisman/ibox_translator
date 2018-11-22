@@ -7,13 +7,14 @@ from zone import get_zones_data, encode_vol_by_id, decode_vol_by_id, box_auth, b
 import urllib3
 import random, string, time
 from infinisdk import InfiniBox
-from threading import Thread
+#from threading import Thread
+from shared import *
 urllib3.disable_warnings()
 
 # need to add relevant changes to URLs when quering for zone_code
 
 name_len=10
-generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
+#generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 
 def get_params(vol_id):
@@ -48,17 +49,17 @@ def format_snap(data, meta, status='available'):
         todict['name']=meta['name']
     return todict
 
-def format_notify(data):
-    todict = {
-        "zone_code":'zonecode1',
-        "volume_id":data['volume_id'],
-        "snapshot_id":data['id'],
-        "notify_type": data['notify_type'],
-        "status":data['status'],
-        "result":'success',
-        "create_at":strftime('%Y-%m-%d %H:%M:%S', localtime())
-    }
-    return todict
+#def format_notify(data):
+#    todict = {
+#        "zone_code":'zonecode1',
+#        "volume_id":data['volume_id'],
+#        "snapshot_id":data['id'],
+#        "notify_type": data['notify_type'],
+#        "status":data['status'],
+#        "result":'success',
+#        "create_at":strftime('%Y-%m-%d %H:%M:%S', localtime())
+#    }
+#    return todict
 
 def format_mapping(data, snap):
     todict={  
@@ -78,18 +79,18 @@ def format_mapping(data, snap):
     return todict
 
 
-class NotifyRM(Thread):
-    def __init__(self, data):
-        Thread.__init__(self)
-        self.data = data
-
-    def run(self):
-        time.sleep(10)
-        outp = format_notify(self.data)
-	pheaders = {'content-type': "application/json"}
-	requests.post(url='http://221.148.108.21:8050/syncpc/storage-resp.do', auth=('admin', '123456'), headers=pheaders, json=outp)        
-	print(outp)
-
+#class NotifyRM(Thread):
+#    def __init__(self, data):
+#        Thread.__init__(self)
+#        self.data = data
+#
+#    def run(self):
+#        time.sleep(10)
+#        outp = format_notify(self.data)
+#	pheaders = {'content-type': "application/json"}
+#	requests.post(url='http://221.148.108.21:8050/syncpc/storage-resp.do', auth=('admin', '123456'), headers=pheaders, json=outp)        
+#	#print(outp)
+#
 
 class SnapsList(Resource):
     def __init__(self):

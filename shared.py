@@ -29,7 +29,6 @@ class NotifyRM(Thread):
     def run(self):
         sleep(15)
         outp = format_notify(self.data)
-        pheaders = {'content-type': "application/json"}
+	print(outp)        
+	pheaders = {'content-type': "application/json"}
         requests.post(url='http://{}:{}/{}'.format(rm_srv,port,uri), auth=('admin', '123456'), headers=pheaders, json=outp) 
-        outp = format_notify(self.data)
-        print(outp)
