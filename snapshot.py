@@ -20,20 +20,18 @@ def get_params(vol_id):
     box_login(zones, 'login')
     box, volume_id = decode_vol_by_id(vol=vol_id, vtype='box_ip', zones=zones)
     ibox=get_box_by_par(par='box_ip',req='ibox',val=box, zones=zones)
-    box, volume_id = decode_vol_by_id(vol_id, 'box_ip',zones=zones)
-    ibox=get_box_by_par(par='box_ip',req='ibox',val=box,zones=zones)
     return ibox, volume_id
   
 
 def format_snap(data, meta, status='available'):
     todict = {
         "zone_code":'zonecode1',
-        "id":encode_vol_by_id(val=data.system.get_name(), id=str(data.id), type='box_ip', zones=zones),
+        "id":encode_vol_by_id(val=data.system, id=str(data.id), type='ibox', zones=zones),
         "name":data.get_name(),
         "desc":None,
         "size":str(data.get_size()),
         "status":status,
-        "volume_id":encode_vol_by_id(val=data.system.get_name(), id=str(data.get_parent().id), type='box_ip', zones=zones),
+        "volume_id":encode_vol_by_id(val=data.system, id=str(data.get_parent().id), type='ibox', zones=zones),
         "create_at":data.get_creation_time().strftime('%Y-%m-%d %H:%M:%S'),
         "rollback_starttime":None,
         "rollback_endtime":None,
