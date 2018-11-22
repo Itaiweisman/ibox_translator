@@ -250,7 +250,7 @@ class VolumesList(Resource):
             notify_f.writelines(json.dumps(notify_vol))
             notify_f.close()
             notify_rm(notify)
-	    print "got until here"
+	    #print "got until here"
         except Exception as E:
             str="Failed! {} ; notify is {}".format(E,notify)
             print str 		
