@@ -14,11 +14,11 @@ import json
 import subprocess
 from infi.dtypes.iqn import make_iscsi_name
 from time import gmtime, strftime
-zone_file='./zones.json'
 
-global zoneset
-zoneset=get_zones_data(zone_file)
-set_box_hexa(zoneset)
+#zone_file='./zones.json'
+#global zoneset
+#zoneset=get_zones_data(zone_file)
+#set_box_hexa(zoneset)
 #try:
 #    box_login(zoneset)
 #except Exception as E:
@@ -29,10 +29,10 @@ set_box_hexa(zoneset)
 ### Wrapper 
 def loggin_in_out(func):
     def wrapper(*args,**kwargs):
-        box_login(zoneset,'login')
+        box_login(zones,'login')
         return func(*args,**kwargs)
         #print "logging out"
-        box_login(zoneset,'logout')
+        box_login(zones,'logout')
     return wrapper
 
 def get_host(system,host_name):
@@ -69,18 +69,18 @@ class InvalidUsage(Exception):
         rv['message'] = self.message
         return rv
 
-app = Flask(__name__)
-api = Api(app)
+#app = Flask(__name__)
+#api = Api(app)
 
 
 ## To be replaced with the actual values
 loggedout_attempts=3
 loggedout_interval=3
-ibox = "192.168.0.30"
+#ibox = "192.168.0.30"
 notify_dir = '/tmp/'
 notify_log = notify_dir+ "notify.log"
 notify_script = "./notify_rm.sh"
-cred=('admin', '123456')
+#cred=('admin', '123456')
 creds = HTTPBasicAuth('admin', '123456')
 
 ### InfiniSDK Par/t
@@ -168,9 +168,9 @@ class VolumesList(Resource):
         else:
             iscsi_filter=False
         volumes=[]
-        for box in zoneset['zones']:
-            print "box is {}".format(box['ibox'])
-            volumes.extend(box['ibox'].volumes.to_list())
+        for box in zones['zones']:
+            #print "box is {}".format(box['ibox'])
+            volumes.extend(box['ibox'].volumes.find(type='master').to_list())
         #volumes=system.volumes.to_list()
         
         for volume in volumes:
@@ -200,7 +200,7 @@ class VolumesList(Resource):
         #try:
             ## ITAI 081118
  	#print "zoneset {} looking for {}".format(zoneset,body['volumes']['zone_code'])
-        system=get_box_by_par(par="name",req="ibox",val=body['volumes']['zone_code'],zones=zoneset)
+        system=get_box_by_par(par="name",req="ibox",val=body['volumes']['zone_code'],zones=zones)
         #print "******* found {}".format(system.get_name())
         pool=system.pools.to_list()[0]
         #print "system is {}, pool is {}".format(system.get_name(),pool.get_name())
@@ -214,7 +214,7 @@ class VolumesList(Resource):
         #    raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
         volume.set_metadata('name',body['volumes']['name'])
         volume.set_metadata('iscsi_init',body['volumes']['iscsi_init'])
-        new_id=encode_vol_by_id(val=system,id=volume.get_id(),type='ibox',zones=zoneset)
+        new_id=encode_vol_by_id(val=system,id=volume.get_id(),type='ibox',zones=zones)
         #print ">>>> new id is {}".format(new_id)
         volume.set_metadata('id',new_id)
         for optional_key in opts_pars:
@@ -269,7 +269,7 @@ class Volume(Resource):
         #ITAI 08112018
 
         ###infi_id=vol_id[-5:]
-        system,vol=decode_vol_by_id(vol_id,'ibox',zoneset)
+        system,vol=decode_vol_by_id(vol_id,'ibox',zones)
         #ITAI 08112018
         try:
             #print "looking on {} for {}".format(system.get_name(), vol)
@@ -296,7 +296,7 @@ class Volume(Resource):
         #print "in volume deletion"
         #ITAI 08112018
         ###infi_vol_id=int(vol_id[-5:])
-        system,vol=decode_vol_by_id(vol_id,'ibox',zoneset)
+        system,vol=decode_vol_by_id(vol_id,'ibox',zones)
         #print "for deletion - volume {} in box {}".format(int(vol),system)
         try:
             volume=system.volumes.find(id=int(vol))
@@ -338,7 +338,7 @@ class VolumesAttachment(Resource):
         ###host=get_host(system,body['volume']['iscsi_init'])
         for volume in body['volume']['volumes']:
             #ITAI 08112018
-            system,vol_inf_id=decode_vol_by_id(volume['volume_id'],'ibox',zoneset)
+            system,vol_inf_id=decode_vol_by_id(volume['volume_id'],'ibox',zones)
             host=get_host(system,body['volume']['iscsi_init'])
             #ITAI 08112018
             vol=system.volumes.find(id=vol_inf_id).to_list()
@@ -383,7 +383,7 @@ class VolumeExpand(Resource):
         volume=vol_id
         new_size=int(body['volume']['size'])
         #ITAI 08112018
-        system,vol_inf_id=decode_vol_by_id(vol_id,'ibox',zoneset)
+        system,vol_inf_id=decode_vol_by_id(vol_id,'ibox',zones)
         volume_object=system.volumes.find(id=vol_inf_id).to_list()
         if not volume_object:
             return 404,"Volume not found"
