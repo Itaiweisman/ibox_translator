@@ -26,7 +26,7 @@ def get_params(vol_id):
 
 def format_snap(data, meta, status='available'):
     todict = {
-        "zone_code":'zonecode1',
+        #"zone_code":'zonecode1',
         "id":encode_vol_by_id(val=data.system, id=str(data.id), type='ibox', zones=zones),
         "name":data.get_name(),
         "desc":None,
@@ -122,13 +122,14 @@ class SnapsList(Resource):
             v1.set_metadata('desc', bot_parse['desc'])
             v1.set_metadata('name', bot_parse['name'])
             outm=v1.get_all_metadata()
-            snap_dict=format_snap(v1, outm, status='creating')
+	    snap_dict = format_snap(v1, outm, status='creating')
+            s_dict={"snapshot":snap_dict}
         else:
             return 404
         notifydict = {'volume_id':snap_dict['volume_id'], 'id':snap_dict['id'], 'status':'available', 'notify_type':'snapshot_create'}
         thread_a = NotifyRM(notifydict)
         thread_a.start()
-        return snap_dict, 201
+        return s_dict, 201
     
 
 class SnapDel(Resource):

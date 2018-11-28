@@ -44,11 +44,14 @@ class ImagesList(Resource):
             reqargs = self.reqparse.parse_args()
             headers = {'X-Auth-Token': reqargs['ServiceKey']}
             outp = requests.get(url=url,headers=headers)
-            image_list=[]
-            for item in outp.json()['images']:
-                    image_list.append(format_image(item))
-            image_dict = {"images":image_list}
-            return image_dict, 200
+	    if outp.status_code == 200:
+	            image_list=[]
+        	    for item in outp.json()['images']:
+                	    image_list.append(format_image(item))
+	            image_dict = {"images":image_list}
+        	    return image_dict, 200
+	    else:
+		return outp.reason, outp.status_code
         else:
 	     openstack='192.168.0.3'
              reqargs = self.reqparse.parse_args()
@@ -58,11 +61,15 @@ class ImagesList(Resource):
                  url="http://{}:{}/v2/images?name={}".format(openstack, glanceport, request.args['name'])
 	     headers = {'X-Auth-Token': reqargs['ServiceKey']}
              outp = requests.get(url=url,headers=headers)
-             image_list=[]
-             for item in outp.json()['images']:
-                    image_list.append(format_image(item))
-             image_dict = {"images":image_list}
-             return image_dict, 200 
+	     if outp.status_code == 200:
+	         image_list=[]
+                 for item in outp.json()['images']:
+                        image_list.append(format_image(item))
+                 image_dict = {"images":image_list}
+                 return image_dict, 200 
+	     else:
+		return outp.reason, outp.status_code
+
     
 
 class Image(Resource):
@@ -79,9 +86,12 @@ class Image(Resource):
         url="http://{}:{}/v2/images/{}".format(openstack, glanceport, reqid)
         headers = {'X-Auth-Token': reqargs['ServiceKey']}
         outp = requests.get(url=url,headers=headers)
-        fimage=format_image(outp.json())
-        image_dict = {"image":fimage}
-        return image_dict, 200
+	if outp.status_code == 200:
+	        fimage=format_image(outp.json())
+        	image_dict = {"image":fimage}
+	        return image_dict, 200
+	else:
+		return outp.reason, outp.status_code
     
 
 #api.add_resource(ImagesList, "/api/v1/images")
