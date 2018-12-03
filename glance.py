@@ -39,38 +39,55 @@ class ImagesList(Resource):
         if 'zone_code' in request.args:
             openstack=get_box_by_par(par='name', val=request.args['zone_code'] , req='openstack_glance',zones=zones)
             url="http://{}:{}/v2/images".format(openstack, glanceport)
-            if 'name' in request.args:
-                url="http://{}:{}/v2/images?name={}".format(openstack, glanceport, request.args['name'])
             reqargs = self.reqparse.parse_args()
             headers = {'X-Auth-Token': reqargs['ServiceKey']}
             outp = requests.get(url=url,headers=headers)
-	    if outp.status_code == 200:
-	            image_list=[]
-        	    for item in outp.json()['images']:
-                	    image_list.append(format_image(item))
-	            image_dict = {"images":image_list}
-        	    return image_dict, 200
-	    else:
-		return outp.reason, outp.status_code
+            if 'name' in request.args:
+                imagelist = [image for image in outp.json()['images'] if request.args['name'] in image['name']]
+                if imagelist:
+                    image_list=[]
+                    for item in imagelist:
+                            image_list.append(format_image(item))
+                    image_dict = {"images":image_list}
+                    return image_dict, 200
+                else:
+                    return 'Not Found', 404
+            if outp.status_code == 200:
+                image_list=[]
+                for item in outp.json()['images']:
+                    image_list.append(format_image(item))
+                image_dict = {"images":image_list}
+                return image_dict, 200
+            else:
+                return outp.reason, outp.status_code
         else:
-	     openstack='192.168.0.3'
-             reqargs = self.reqparse.parse_args()
-             #for zone in zones['zones']:
-             url="http://{}:{}/v2/images".format(openstack, glanceport)
-	     if 'name' in request.args:
-                 url="http://{}:{}/v2/images?name={}".format(openstack, glanceport, request.args['name'])
-	     headers = {'X-Auth-Token': reqargs['ServiceKey']}
-             outp = requests.get(url=url,headers=headers)
-	     if outp.status_code == 200:
-	         image_list=[]
-                 for item in outp.json()['images']:
-                        image_list.append(format_image(item))
-                 image_dict = {"images":image_list}
-                 return image_dict, 200 
-	     else:
-		return outp.reason, outp.status_code
-
+            image_list=[]
+            for zone in zones['zones']:
+                openstack=get_box_by_par(par='name', val=zone['name'], req='openstack_glance',zones=zones)
+                url="http://{}:{}/v2/images".format(openstack, glanceport)
+                reqargs = self.reqparse.parse_args()
+                headers = {'X-Auth-Token': reqargs['ServiceKey']}
+                try:
+                    outp = requests.get(url=url,headers=headers)
+                except Exception as E:
+                    print(E.message)
+                    exit(1)
+                for image in outp.json()['images']:
+                    image_list.append(format_image(image))
+            if 'name' in request.args:
+                imagelist = [image for image in image_list if request.args['name'] in image['name']]
+                if imagelist:
+                    image_list=[]
+                    for item in imagelist:
+                            image_list.append(item)
+                    image_dict = {"images":image_list}
+                    return image_dict, 200
+                else:
+                    return 'Not Found', 404
+            image_dict = {"images":image_list}
+            return image_dict, 200
     
+
 
 class Image(Resource):
     def __init__(self):
