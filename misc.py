@@ -56,7 +56,7 @@ class GetInit(Resource):
         if 'zone_code' in request.args:
             ibox=ibox=get_box_by_par(par='name', req='ibox', val=request.args['zone_code'], zones=zones)
         if ibox.hosts.get_host_by_initiator_address(iscsi_init):
-            if check_iqn_logged_in(ibox, iscsi_init):
+            if not check_iqn_logged_in(ibox, iscsi_init):
                 return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"online"}}
             else:
                 return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"offline"}}

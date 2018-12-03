@@ -5,6 +5,7 @@ from glance import *
 from snapshot import *
 from zone import *
 from scheduler import *
+from misc import *
 import logging
 logging.basicConfig(filename='ibox_translator.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 zone_file='./zones.json'
@@ -33,4 +34,7 @@ if __name__ == "__main__":
 	api.add_resource(SnapAttach, "/api/v1/volumes/snapshots/attachment")	
 	api.add_resource(ScheduleList, "/api/v1/volumes/<vol_id>/snapshots/schedule")
 	api.add_resource(Schedule, "/api/v1/volumes/<vol_id>/snapshots/schedule/<schedule_id>")
+	api.add_resource(GetTraget, "/api/v1/init-target")
+	api.add_resource(GetInit, "/api/v1/iscsi_init/<iscsi_init>")
+	api.add_resource(PCPower, "/api/v1/pc_power")
 	app.run(debug=True, port=8080, host='0.0.0.0')
