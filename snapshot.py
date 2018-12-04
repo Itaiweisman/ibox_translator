@@ -30,7 +30,7 @@ def format_snap(data, meta, status='available'):
         "id":encode_vol_by_id(val=data.system, id=str(data.id), type='ibox', zones=zones),
         "name":data.get_name(),
         "desc":None,
-        "size":str(data.get_size()),
+        "size":str(data.get_size())[:-3],
         "status":status,
         "volume_id":encode_vol_by_id(val=data.system, id=str(data.get_parent().id), type='ibox', zones=zones),
         "create_at":data.get_creation_time().strftime('%Y-%m-%d %H:%M:%S'),
