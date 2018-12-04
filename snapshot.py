@@ -142,7 +142,7 @@ class SnapDel(Resource):
     def delete(self,vol_id, snap_id):
         ibox, volume_id = get_params(snap_id)
         (ibox.volumes.get_by_id(volume_id)).delete()
-        return 200
+        return '', 200
 
 
 class SnapRestore(Resource):
@@ -161,7 +161,7 @@ class SnapRestore(Resource):
         notifydict = {'volume_id':vol_id, 'id':snap_id, 'status':'activated', 'notify_type':'snapshot_revert'}
         thread_b = NotifyRM(notifydict)
         thread_b.start()
-        return 200
+        return '', 200
         
 
 class SnapAttach(Resource):
