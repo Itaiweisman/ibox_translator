@@ -67,8 +67,11 @@ class ScheduleList(Resource):
         super(ScheduleList, self).__init__()
     def get(self, vol_id):
         job=scheduler.get_job(vol_id)
-        fjob = {"schedule":format_sched(job)}
-        return fjob, 200
+	if job:
+	        fjob = {"schedule":format_sched(job)}
+	        return fjob, 200
+	else:
+		return 'Not Found', 404
     def post(self, vol_id):
         data=request.get_json()
         dow_lst = [k for k,v in data['schedule'].items() if v == True and type(v) == bool]
