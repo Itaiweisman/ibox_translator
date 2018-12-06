@@ -331,8 +331,10 @@ class Volume(Resource):
 	#    	notify_rm(notify)
 	except Exception:
 	    	pass
-        time.sleep(5)
-        return ret_data, 200
+        #time.sleep(5)
+        return '', 200
+
+>>>>>>> 3d604cf616382fd6f813924dda88e2cd800160c1
 class VolumesAttachment(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -375,7 +377,7 @@ class VolumesAttachment(Resource):
                 status='fail'
 
         body['status']=status
-        return body,200 ## change ret codes
+        return body, 200 ## change ret codes
 
 class VolumeExpand(Resource):
     def __init__(self):
