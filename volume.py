@@ -331,8 +331,9 @@ class Volume(Resource):
 	#    	notify_rm(notify)
 	except Exception:
 	    	pass
-        time.sleep(5)
-        return ret_data, 200
+        #time.sleep(5)
+        return '', 200
+
 class VolumesAttachment(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
