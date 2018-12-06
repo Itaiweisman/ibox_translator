@@ -187,7 +187,7 @@ class VolumesList(Resource):
         ## ITAI 081118
         #print outp
         return_json['volumes']=outp
-        return return_json,'200'
+        return return_json, 200
     
     @loggin_in_out
     def post(self):
@@ -279,10 +279,10 @@ class Volume(Resource):
             #print "looking on {} for {}".format(system.get_name(), vol)
             volume=system.volumes.find(id=vol)[0]
         except Exception: #outp_json['error'] or not outp_json['result']:
-            return {},'404'
+            return {}, 404
         #print "found vol {}".format(vol.get_name())
         return_json=get_vol_data(volume)
-        return return_json, '200'
+        return return_json, 200
         
     def post(self, id):
        pass
@@ -309,7 +309,7 @@ class Volume(Resource):
                 vol_data=get_vol_data(volume[0])
                 volume[0].delete()
             else: 
-                return {},'200'
+                return {}, 200
         except Exception as E:
             print E
             abort(500)
@@ -332,7 +332,7 @@ class Volume(Resource):
 	except Exception:
 	    	pass
         time.sleep(5)
-        return ret_data, '200'
+        return ret_data, 200
 class VolumesAttachment(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -393,17 +393,17 @@ class VolumeExpand(Resource):
         system,vol_inf_id=decode_vol_by_id(vol_id,'ibox',zones)
         volume_object=system.volumes.find(id=vol_inf_id).to_list()
         if not volume_object:
-            return 404,"Volume not found"
+            return 'Volume Not Found', 404
         volume_size=volume_object[0].get_size().bits/8/1000000000
         #print "volume size is {} new size is {}".format(volume_size,new_size)
         if volume_size > new_size:
-            return 405,"Volume is already bigger"
+            return 'Volume is already bigger', 405
         cap_to_resize=(new_size-volume_size)*GB
         try:
             volume_object[0].resize(cap_to_resize)
         except Exception as E:
             print "Caught Exception {}".format(E)
-            return 500,"Exception"
+            return 'Exception', 500
         #ret_data={}
         #ret_data['volume_id']=vol_id
         #ret_data['snapshot_id']=''
@@ -422,7 +422,7 @@ class VolumeExpand(Resource):
  #           notify_rm(notify)
         except Exception:
             pass
-        return 200,"success"
+        return 'Success', 200
     
 #api.add_resource(VolumesList, "/api/v1/volumes")
 #api.add_resource(VolumesAttachment, "/api/v1/volumes/attachment")
