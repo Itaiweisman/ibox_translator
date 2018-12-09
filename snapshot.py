@@ -101,7 +101,10 @@ class SnapsList(Resource):
         super(SnapsList, self).__init__()
     def get(self, vol_id):
         ibox, volume_id = get_params(vol_id)
-        s1=(ibox.volumes.get_by_id(volume_id)).get_children()
+	try:
+	        s1=(ibox.volumes.get_by_id(volume_id)).get_children()
+	except Exception:
+		return {}, 404
         snap_list=[]
         for item in s1:
             meta=item.get_all_metadata()
@@ -117,7 +120,10 @@ class SnapsList(Resource):
         bot.add_argument('desc', type=str, location=('snapshot',), required=True)
         bot_parse = bot.parse_args(req=top_args)       
         ibox, volume_id = get_params(vol_id)
-        v1=(ibox.volumes.get_by_id(volume_id)).create_snapshot(name=generate_random_name(name_len))
+	try:
+	        v1=(ibox.volumes.get_by_id(volume_id)).create_snapshot(name=generate_random_name(name_len))
+	except Exception:
+		return "Volume Not Found" , 404
         if v1:
             v1.set_metadata('desc', bot_parse['desc'])
             v1.set_metadata('name', bot_parse['name'])
@@ -141,7 +147,10 @@ class SnapDel(Resource):
         super(SnapDel, self).__init__()
     def delete(self,vol_id, snap_id):
         ibox, volume_id = get_params(snap_id)
-        (ibox.volumes.get_by_id(volume_id)).delete()
+	try:
+	        (ibox.volumes.get_by_id(volume_id)).delete()
+	except Exception:
+		return "Snapshot Not Found", 404
         return '', 200
 
 
@@ -155,9 +164,12 @@ class SnapRestore(Resource):
     def post(self,vol_id, snap_id):
         ibox, volume_id = get_params(vol_id)
         ibox, snapshot_id = get_params(snap_id)
-        vol=ibox.volumes.get_by_id(volume_id)
-        snap=ibox.volumes.get_by_id(snapshot_id)
-        vol.restore(snap)
+	try:
+	        vol=ibox.volumes.get_by_id(volume_id)
+	        snap=ibox.volumes.get_by_id(snapshot_id)
+	        vol.restore(snap)
+	except Exception:
+		return "Not Found", 404
         notifydict = {'volume_id':vol_id, 'id':snap_id, 'status':'activated', 'notify_type':'snapshot_revert'}
         thread_b = NotifyRM(notifydict)
         thread_b.start()
@@ -176,8 +188,11 @@ class SnapAttach(Resource):
         for snap in body['snapshot']['snapshots']:
             ibox, volume_id = get_params(snap['volume_id'])
             ibox, snapshot_id = get_params(snap['snapshot_id'])
-            snapid=ibox.volumes.get_by_id(snapshot_id)
-            host=ibox.hosts.get_host_by_initiator_address(body['snapshot']['iscsi_init'])
+            try:
+	    	snapid=ibox.volumes.get_by_id(snapshot_id)
+	        host=ibox.hosts.get_host_by_initiator_address(body['snapshot']['iscsi_init'])
+	    except Exception:
+		return "Not Found", 404
             if host and snapid:
                 if body['snapshot']['action'] == 'ATTACH':
                     host.map_volume(snapid, lun=snap['order'])   
