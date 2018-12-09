@@ -136,7 +136,7 @@ class Schedule(Resource):
         if job:
             job.remove()
             job2.remove()
-            return  200
+            return None, 200
         else:
             return "Not Found", 404
         
