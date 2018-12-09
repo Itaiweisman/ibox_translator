@@ -72,8 +72,11 @@ class ImagesList(Resource):
                 except Exception as E:
                     print(E.message)
                     exit(1)
-                for image in outp.json()['images']:
-                    image_list.append(format_image(image))
+		if outp.status_code == 200:
+	                for image in outp.json()['images']:
+        	            image_list.append(format_image(image))
+		else:
+			return outp.reason, outp.status_code
             if 'name' in request.args:
                 imagelist = [image for image in image_list if request.args['name'] in image['name']]
                 if imagelist:
