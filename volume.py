@@ -143,11 +143,14 @@ def get_vol_data(volume):
     return_json['volumes']['create_at'] = volume.get_created_at().format('YYYY-MM-DD HH:mm:ss')
     return_json['volumes']['lun_id'] = volume.get_id()
     return_json['volumes']['service_id'] = service_id
-    return_json['volumes']['status'] = 'available'
     if volume.is_mapped():
         return_json['volumes']['attach_status'] = 'online'
     else:
         return_json['volumes']['attach_status'] = 'offline'
+    if 'status' in volume.get_all_metadata():
+	return_json['volumes']['status'] = volume.get_all_metadata()['status']
+    else:
+	return_json['volumes']['status'] = 'available'
     return return_json
 
 class VolumesList(Resource):
@@ -206,15 +209,19 @@ class VolumesList(Resource):
         pool=system.pools.to_list()[0]
         #print "system is {}, pool is {}".format(system.get_name(),pool.get_name())
         if not system:
-            return '',404
+            return {},404
             ## ITAI 081118
         new_name=generate_random_name(vol_name_length)
         volume=system.volumes.create(pool=pool,size=body['volumes']['size']*GB,name=new_name)
         #except Exception as E:
         ##    print "exception is {}".format(E)
         #    raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
+	if body['volumes']['iscsi_init']:
+		host=get_host(system, body['volumes']['iscsi_init'])
+		host.map_volume(volume)	
         volume.set_metadata('name',body['volumes']['name'])
         volume.set_metadata('iscsi_init',body['volumes']['iscsi_init'])
+        volume.set_metadata('status','available')
         new_id=encode_vol_by_id(val=system,id=volume.get_id(),type='ibox',zones=zones)
         #print ">>>> new id is {}".format(new_id)
         volume.set_metadata('id',new_id)
@@ -312,7 +319,7 @@ class Volume(Resource):
                 return {}, 200
         except Exception as E:
             print E
-            abort(500)
+            return E.message, 404
         #ret_data={}
         #ret_data['volume_id']=vol_id
         #ret_data['create_at']=vol_data['volumes']['create_at']
@@ -322,7 +329,6 @@ class Volume(Resource):
         #ret_data['notify_type']='volume_delete'
 	ret_data={'volume_id':vol_id, 'id':"", 'status':'deleted', 'notify_type':'volume_delete'}
         try:
-        	print "notify is {}".format(notify)
 		thread_b = NotifyRM(ret_data)
 		thread_b.start()	    	
 	#	notify_f=open(notify,'w')
@@ -332,9 +338,8 @@ class Volume(Resource):
 	except Exception:
 	    	pass
         #time.sleep(5)
-        return '', 200
+        return {}, 200
 
->>>>>>> 3d604cf616382fd6f813924dda88e2cd800160c1
 class VolumesAttachment(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -424,7 +429,7 @@ class VolumeExpand(Resource):
  #           notify_rm(notify)
         except Exception:
             pass
-        return 'Success', 200
+        return {}, 200
     
 #api.add_resource(VolumesList, "/api/v1/volumes")
 #api.add_resource(VolumesAttachment, "/api/v1/volumes/attachment")

@@ -6,6 +6,7 @@ from requests.auth import HTTPBasicAuth
 from zone import get_zones_data, encode_vol_by_id, decode_vol_by_id, box_auth, box_login, get_box_by_par, zones
 import urllib3
 import random, string, time
+from volume import get_host
 from infinisdk import InfiniBox
 #from threading import Thread
 from shared import *
@@ -131,7 +132,7 @@ class SnapsList(Resource):
 	    snap_dict = format_snap(v1, outm, status='creating')
             s_dict={"snapshot":snap_dict}
         else:
-            return 404
+            return {},404
         notifydict = {'volume_id':snap_dict['volume_id'], 'id':snap_dict['id'], 'status':'available', 'notify_type':'snapshot_create'}
         thread_a = NotifyRM(notifydict)
         thread_a.start()
@@ -151,7 +152,7 @@ class SnapDel(Resource):
 	        (ibox.volumes.get_by_id(volume_id)).delete()
 	except Exception:
 		return "Snapshot Not Found", 404
-        return '', 200
+        return {}, 200
 
 
 class SnapRestore(Resource):
@@ -169,11 +170,11 @@ class SnapRestore(Resource):
 	        snap=ibox.volumes.get_by_id(snapshot_id)
 	        vol.restore(snap)
 	except Exception:
-		return "Not Found", 404
+		return {}, 404
         notifydict = {'volume_id':vol_id, 'id':snap_id, 'status':'activated', 'notify_type':'snapshot_revert'}
         thread_b = NotifyRM(notifydict)
         thread_b.start()
-        return '', 200
+        return {}, 200
         
 
 class SnapAttach(Resource):
@@ -188,11 +189,9 @@ class SnapAttach(Resource):
         for snap in body['snapshot']['snapshots']:
             ibox, volume_id = get_params(snap['volume_id'])
             ibox, snapshot_id = get_params(snap['snapshot_id'])
-            try:
-	    	snapid=ibox.volumes.get_by_id(snapshot_id)
-	        host=ibox.hosts.get_host_by_initiator_address(body['snapshot']['iscsi_init'])
-	    except Exception:
-		return "Not Found", 404
+	    snapid=ibox.volumes.get_by_id(snapshot_id)
+	    #host=ibox.hosts.get_host_by_initiator_address(body['snapshot']['iscsi_init'])
+	    host=get_host(ibox,body['snapshot']['iscsi_init'])
             if host and snapid:
                 if body['snapshot']['action'] == 'ATTACH':
                     host.map_volume(snapid, lun=snap['order'])   
@@ -201,7 +200,7 @@ class SnapAttach(Resource):
                     host.unmap_volume(snapid)   
                     outp=format_mapping(body, snap)
             else:
-                return 'wrong action', 404
+                return {}, 404
         return outp, 200
 
     

@@ -71,7 +71,7 @@ class ScheduleList(Resource):
 	        fjob = {"schedule":format_sched(job)}
 	        return fjob, 200
 	else:
-		return 'Not Found', 404
+		return {}, 404
     def post(self, vol_id):
         data=request.get_json()
 	top = reqparse.RequestParser()
@@ -174,9 +174,9 @@ class Schedule(Resource):
         if job:
             job.remove()
             job2.remove()
-            return None, 200
+            return {}, 200
         else:
-            return "Not Found", 404
+            return {}, 404
         
         
 

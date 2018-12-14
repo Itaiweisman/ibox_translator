@@ -3,6 +3,7 @@ from flask_restful import Api, Resource, reqparse
 from volume import check_iqn_logged_in
 # from shared import generate_random_name
 from zone import get_zones_data, encode_vol_by_id, decode_vol_by_id, box_auth, box_login, get_box_by_par, zones
+from snapshot import get_params
 #schedule_app = Flask(__name__)
 
 
@@ -55,13 +56,15 @@ class GetInit(Resource):
         reqargs = self.reqparse.parse_args()
         if 'zone_code' in request.args:
             ibox=ibox=get_box_by_par(par='name', req='ibox', val=request.args['zone_code'], zones=zones)
-        if ibox.hosts.get_host_by_initiator_address(iscsi_init):
-            if not check_iqn_logged_in(ibox, iscsi_init):
-                return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"online"}}
-            else:
-                return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"offline"}}
+            if ibox.hosts.get_host_by_initiator_address(iscsi_init):
+        	    if not check_iqn_logged_in(ibox, iscsi_init):
+        	        return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"online"}}
+        	    else:
+        	        return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"offline"}}
         else:
-                return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"not-exist"}}
+		return	{'error':'must specify zone_code'}, 404
+	#else:
+        #        return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"not-exist"}}
 
 
 class PCPower(Resource):
@@ -74,9 +77,15 @@ class PCPower(Resource):
         super(PCPower, self).__init__()
     def post(self):
         reqargs = self.reqparse.parse_args()
+	body = request.json
         ibox=ibox=get_box_by_par(par='name', req='ibox', val=reqargs['zone_code'], zones=zones)
+	vols = (v['volume_id'] for v in body['volumes'])
         if ibox.hosts.get_host_by_initiator_address(reqargs['iscsi_init']):
             if check_iqn_logged_in(ibox, reqargs['iscsi_init']):
+		for vol in vols:
+			ibox, v = get_params(vol)	
+			v1 = ibox.volumes.get_by_id(v)
+			v1.set_metadata('status', 'in-use')
                 return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":reqargs['iscsi_init'], "initiator_status":"online"}}
             else:
                 return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":reqargs['iscsi_init'], "initiator_status":"offline"}}
