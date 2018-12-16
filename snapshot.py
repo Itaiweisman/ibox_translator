@@ -42,8 +42,8 @@ def format_snap(data, meta, status='available'):
     }
     if data.is_mapped():
         todict["status"]='In Use'
-    if status:
-        todict['status']=status
+    if 'status' in data.get_all_metadata():
+        todict['status']=data.get_all_metadata()['status']
     if meta.has_key('desc'):
         todict['desc']=meta['desc']
     if meta.has_key('name'):

@@ -79,7 +79,8 @@ class PCPower(Resource):
         reqargs = self.reqparse.parse_args()
 	body = request.json
         ibox=ibox=get_box_by_par(par='name', req='ibox', val=reqargs['zone_code'], zones=zones)
-	vols = (v['volume_id'] for v in body['volumes'])
+	#vols = (v['volume_id'] for v in body['volumes'])
+	vols = [y for x in [v.values() for v in body['volumes']] for y in x]
         if ibox.hosts.get_host_by_initiator_address(reqargs['iscsi_init']):
             if check_iqn_logged_in(ibox, reqargs['iscsi_init']):
 		for vol in vols:
