@@ -50,19 +50,8 @@ def format_snap(data, meta, status='available'):
         todict['name']=meta['name']
     return todict
 
-#def format_notify(data):
-#    todict = {
-#        "zone_code":'zonecode1',
-#        "volume_id":data['volume_id'],
-#        "snapshot_id":data['id'],
-#        "notify_type": data['notify_type'],
-#        "status":data['status'],
-#        "result":'success',
-#        "create_at":strftime('%Y-%m-%d %H:%M:%S', localtime())
-#    }
-#    return todict
 
-def format_mapping(data, snap):
+def format_mapping(data, snap, status='success'):
     todict={  
     "snapshotAction":{  
         "snapshots":[  
@@ -73,25 +62,13 @@ def format_mapping(data, snap):
             }
         ],
         "action":data['snapshot']["action"],
-        "status":"success",
+        "status": status,
         "iscsi_init":data['snapshot']["iscsi_init"]
         }
     }
     return todict
 
 
-#class NotifyRM(Thread):
-#    def __init__(self, data):
-#        Thread.__init__(self)
-#        self.data = data
-#
-#    def run(self):
-#        time.sleep(10)
-#        outp = format_notify(self.data)
-#	pheaders = {'content-type': "application/json"}
-#	requests.post(url='http://221.148.108.21:8050/syncpc/storage-resp.do', auth=('admin', '123456'), headers=pheaders, json=outp)        
-#	#print(outp)
-#
 
 class SnapsList(Resource):
     def __init__(self):
@@ -124,7 +101,7 @@ class SnapsList(Resource):
 	try:
 	        v1=(ibox.volumes.get_by_id(volume_id)).create_snapshot(name=generate_random_name(name_len))
 	except Exception:
-		return "Volume Not Found" , 404
+		return {}, 404
         if v1:
             v1.set_metadata('desc', bot_parse['desc'])
             v1.set_metadata('name', bot_parse['name'])
@@ -151,7 +128,7 @@ class SnapDel(Resource):
 	try:
 	        (ibox.volumes.get_by_id(volume_id)).delete()
 	except Exception:
-		return "Snapshot Not Found", 404
+		return {}, 404
         return {}, 200
 
 
@@ -193,12 +170,18 @@ class SnapAttach(Resource):
 	    #host=ibox.hosts.get_host_by_initiator_address(body['snapshot']['iscsi_init'])
 	    host=get_host(ibox,body['snapshot']['iscsi_init'])
             if host and snapid:
-                if body['snapshot']['action'] == 'ATTACH':
-                    host.map_volume(snapid, lun=snap['order'])   
-                    outp=format_mapping(body, snap)
-                elif body['snapshot']['action'] == 'DETACH':
-                    host.unmap_volume(snapid)   
-                    outp=format_mapping(body, snap)
+                if body['snapshot']['action'].upper() == 'ATTACH':
+                    try:
+			host.map_volume(snapid, lun=snap['order'])   
+	                outp=format_mapping(body, snap)
+		    except Exception:
+			outp=format_mapping(body, snap, status='failed')
+                elif body['snapshot']['action'].upper() == 'DETACH':
+                    try:
+			host.unmap_volume(snapid)   
+	                outp=format_mapping(body, snap)
+		    except Exception:
+			outp=format_mapping(body, snap, status='failed')
             else:
                 return {}, 404
         return outp, 200
