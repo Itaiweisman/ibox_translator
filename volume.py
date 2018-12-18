@@ -218,7 +218,8 @@ class VolumesList(Resource):
         #    raise InvalidUsage('Error Caught {}'.format(E), status_code=420)
 	if body['volumes']['iscsi_init']:
 		host=get_host(system, body['volumes']['iscsi_init'])
-		host.map_volume(volume)	
+		host.map_volume(volume)
+		volume.set_metadata('status', 'in-use')	
         volume.set_metadata('name',body['volumes']['name'])
         volume.set_metadata('iscsi_init',body['volumes']['iscsi_init'])
         volume.set_metadata('status','available')
@@ -361,6 +362,7 @@ class VolumesAttachment(Resource):
             if body['volume']['action'].upper() == "ATTACH":
                 try: 
                     host.map_volume(vol[0],lun=volume['order'])
+		    vol[0].set_metadata('status', 'in-use')
                 except Exception as E:
                     print "Execption {}".format(E)
                     status='fail'
@@ -372,6 +374,7 @@ class VolumesAttachment(Resource):
                     if val:
                          #print "unmapping {} which is {}".format(vol[0],type(vol[0]))
                          host.unmap_volume(vol[0])
+			 vol[0].set_metadata('status', 'available')
                          status='success'
                          break
                     else:

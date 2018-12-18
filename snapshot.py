@@ -172,13 +172,15 @@ class SnapAttach(Resource):
             if host and snapid:
                 if body['snapshot']['action'].upper() == 'ATTACH':
                     try:
-			host.map_volume(snapid, lun=snap['order'])   
+			host.map_volume(snapid, lun=snap['order'])
+			snapid.set_metadata('status', 'in-use')   
 	                outp=format_mapping(body, snap)
 		    except Exception:
 			outp=format_mapping(body, snap, status='failed')
                 elif body['snapshot']['action'].upper() == 'DETACH':
                     try:
-			host.unmap_volume(snapid)   
+			host.unmap_volume(snapid)
+			snapid.set_metadata('status', 'available')   
 	                outp=format_mapping(body, snap)
 		    except Exception:
 			outp=format_mapping(body, snap, status='failed')

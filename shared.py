@@ -6,7 +6,7 @@ import requests
 generate_random_name=lambda length: ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 uri="syncpc/storage-resp.do"
-rm_srv="221.148.108.21"
+rm_srv="218.145.184.81"
 port=8050
 
 

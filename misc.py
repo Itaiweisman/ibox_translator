@@ -73,25 +73,29 @@ class PCPower(Resource):
         self.reqparse.add_argument('ServiceCode', type=str, required=True, location='headers')
         self.reqparse.add_argument('ServiceKey', type=str, required=True, location='headers')
         self.reqparse.add_argument('zone_code', type=str, required=False, location='json')
-        self.reqparse.add_argument('iscsi_init', type=str, required=False, location='json')
+        #self.reqparse.add_argument('iscsi_init', type=str, required=False, location='json')
         super(PCPower, self).__init__()
     def post(self):
         reqargs = self.reqparse.parse_args()
 	body = request.json
-        ibox=ibox=get_box_by_par(par='name', req='ibox', val=reqargs['zone_code'], zones=zones)
+        ibox=get_box_by_par(par='name', req='ibox', val=reqargs['zone_code'], zones=zones)
 	#vols = (v['volume_id'] for v in body['volumes'])
-	vols = [y for x in [v.values() for v in body['volumes']] for y in x]
-        if ibox.hosts.get_host_by_initiator_address(reqargs['iscsi_init']):
-            if check_iqn_logged_in(ibox, reqargs['iscsi_init']):
+	vols = (y for x in [v.values() for v in body['volumes']] for y in x)
+        if ibox.hosts.get_host_by_initiator_address(body['iscsi_init'].lower()):
+            if check_iqn_logged_in(ibox, body['iscsi_init'].lower()) and body['pc_power_status'].lower() == 'online':
 		for vol in vols:
 			ibox, v = get_params(vol)	
 			v1 = ibox.volumes.get_by_id(v)
 			v1.set_metadata('status', 'in-use')
-                return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":reqargs['iscsi_init'], "initiator_status":"online"}}
+                return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":body['iscsi_init'], "initiator_status":"online"}}
             else:
-                return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":reqargs['iscsi_init'], "initiator_status":"offline"}}
+		for vol in vols:
+                        ibox, v = get_params(vol)
+                        v1 = ibox.volumes.get_by_id(v)
+                        v1.set_metadata('status', 'available')
+                return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":body['iscsi_init'], "initiator_status":"offline"}}
         else:
-                return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":reqargs['iscsi_init'], "initiator_status":"not-available"}}
+                return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":body['iscsi_init'], "initiator_status":"not-available"}}
 
 
 
