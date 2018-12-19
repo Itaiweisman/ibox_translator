@@ -361,7 +361,9 @@ class VolumesAttachment(Resource):
                 pass
             if body['volume']['action'].upper() == "ATTACH":
                 try: 
-                    host.map_volume(vol[0],lun=volume['order'])
+                    #host.map_volume(vol[0],lun=volume['order'])
+			
+                    host.map_volume(vol[0])
 		    vol[0].set_metadata('status', 'in-use')
                 except Exception as E:
                     print "Execption {}".format(E)
