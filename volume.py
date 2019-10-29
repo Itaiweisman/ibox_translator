@@ -1,4 +1,4 @@
-from flask import Flask, request,abort,jsonify
+from flask import Flask, request,abort,jsonify,Response
 from flask_restful import Api, Resource, reqparse
 import requests
 from requests.auth import HTTPBasicAuth
@@ -209,7 +209,7 @@ class VolumesList(Resource):
         pool=system.pools.to_list()[0]
         #print "system is {}, pool is {}".format(system.get_name(),pool.get_name())
         if not system:
-            return {},404
+            return Response(status = 404)
             ## ITAI 081118
         new_name=generate_random_name(vol_name_length)
         volume=system.volumes.create(pool=pool,size=body['volumes']['size']*GB,name=new_name)
@@ -287,7 +287,7 @@ class Volume(Resource):
             #print "looking on {} for {}".format(system.get_name(), vol)
             volume=system.volumes.find(id=vol)[0]
         except Exception: #outp_json['error'] or not outp_json['result']:
-            return {}, 404
+            return Response(status = 404)
         #print "found vol {}".format(vol.get_name())
         return_json=get_vol_data(volume)
         return return_json, 200
@@ -317,7 +317,7 @@ class Volume(Resource):
                 vol_data=get_vol_data(volume[0])
                 volume[0].delete()
             else: 
-                return {}, 200
+                return Response(status = 200)
         except Exception as E:
             print E
             return E.message, 404
@@ -339,7 +339,7 @@ class Volume(Resource):
 	except Exception:
 	    	pass
         #time.sleep(5)
-        return {}, 200
+        return Response(status = 200)
 
 class VolumesAttachment(Resource):
     def __init__(self):
@@ -434,7 +434,7 @@ class VolumeExpand(Resource):
  #           notify_rm(notify)
         except Exception:
             pass
-        return {}, 200
+        return Response(status = 200)
     
 #api.add_resource(VolumesList, "/api/v1/volumes")
 #api.add_resource(VolumesAttachment, "/api/v1/volumes/attachment")

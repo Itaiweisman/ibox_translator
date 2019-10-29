@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request,Response
 from flask_restful import Api, Resource, reqparse
 import requests
 from time import strftime, localtime
@@ -129,7 +129,7 @@ class SnapDel(Resource):
 	        (ibox.volumes.get_by_id(volume_id)).delete()
 	except Exception:
 		return {}, 404
-        return {}, 200
+        return Response(status = 200)
 
 
 class SnapRestore(Resource):
@@ -151,7 +151,7 @@ class SnapRestore(Resource):
         notifydict = {'volume_id':vol_id, 'id':snap_id, 'status':'activated', 'notify_type':'snapshot_revert'}
         thread_b = NotifyRM(notifydict)
         thread_b.start()
-        return {}, 200
+        return Response(status = 200)
         
 
 class SnapAttach(Resource):

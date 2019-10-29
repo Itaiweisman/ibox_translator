@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request,Response
 from flask_restful import Api, Resource, reqparse
 from volume import check_iqn_logged_in
 # from shared import generate_random_name
@@ -94,8 +94,8 @@ class PCPower(Resource):
                         v1 = ibox.volumes.get_by_id(v)
                         v1.set_metadata('status', 'available')
                 return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":body['iscsi_init'], "initiator_status":"offline"}}
-        else:
-                return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":body['iscsi_init'], "initiator_status":"not-available"}}
+        #else:
+        #        return {'iscsi': {"zone_code": reqargs['zone_code'], "iscsi_init":body['iscsi_init'], "initiator_status":"not-available"}}
 
 
 

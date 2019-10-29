@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request,Response
 from flask_restful import Api, Resource, reqparse
 from snapshot import *
 from shared import generate_random_name
@@ -71,7 +71,7 @@ class ScheduleList(Resource):
 	        fjob = {"schedule":format_sched(job)}
 	        return fjob, 200
 	else:
-		return {}, 404
+		return Response(status = 404)
     def post(self, vol_id):
         data=request.get_json()
 	top = reqparse.RequestParser()
@@ -174,9 +174,9 @@ class Schedule(Resource):
         if job:
             job.remove()
             job2.remove()
-            return {}, 200
+            return Response(status = 200)
         else:
-            return {}, 404
+            return Response(status = 404)
         
         
 
