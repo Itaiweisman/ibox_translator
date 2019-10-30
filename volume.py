@@ -173,24 +173,25 @@ class VolumesList(Resource):
             iscsi_filter=False
         volumes=[]
         for box in zones['zones']:
-            #print "box is {}".format(box['ibox'])
-            volumes.extend(box['ibox'].volumes.find(type='master').to_list())
-        #volumes=system.volumes.to_list()
-        
-        for volume in volumes:
-            if iscsi_filter and 'iscsi_init' in volume.get_all_metadata().keys() and volume.get_metadata_value('iscsi_init') != iscsi_filter:
-                continue 
-            else: 
-               # print "vol is {}".format(volume.get_name())
-                cur_vol=get_vol_data(volume)
-                #print "cur vol is {} and its type is {}".format(cur_vol,type(cur_vol))
-                #print "*******"
-                #print len(outp)
-                outp.append(cur_vol['volumes'])
-        ## ITAI 081118
-        #print outp
-        return_json['volumes']=outp
-        return return_json, 200
+            if ( isinstance(box['ibox'],InfiniBox)):
+                #print "box is {}".format(box['ibox'])
+                volumes.extend(box['ibox'].volumes.find(type='master').to_list())
+            #volumes=system.volumes.to_list()
+            
+            for volume in volumes:
+                if iscsi_filter and 'iscsi_init' in volume.get_all_metadata().keys() and volume.get_metadata_value('iscsi_init') != iscsi_filter:
+                    continue 
+                else: 
+                   # print "vol is {}".format(volume.get_name())
+                    cur_vol=get_vol_data(volume)
+                    #print "cur vol is {} and its type is {}".format(cur_vol,type(cur_vol))
+                    #print "*******"
+                    #print len(outp)
+                    outp.append(cur_vol['volumes'])
+            ## ITAI 081118
+            #print outp
+            return_json['volumes']=outp
+            return return_json, 200
     
     @loggin_in_out
     def post(self):

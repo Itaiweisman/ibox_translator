@@ -1,6 +1,7 @@
 from flask import Flask, request,Response
 from flask_restful import Api, Resource, reqparse
 from volume import check_iqn_logged_in
+from infinisdk import InfiniBox
 # from shared import generate_random_name
 from zone import get_zones_data, encode_vol_by_id, decode_vol_by_id, box_auth, box_login, get_box_by_par, zones
 from snapshot import get_params
@@ -21,10 +22,11 @@ from snapshot import get_params
 def get_iqn(zone):
     ilist=[]
     ibox=get_box_by_par(par='name', req='ibox', val=zone, zones=zones)
-    nspaces=ibox.network_spaces.find(service='iSCSI_SERVICE').to_list()
-    for ns in nspaces:
-        ilist.append({'target':ns.get_field('properties')['iscsi_iqn']})
-    return ilist
+    if ( isinstance(ibox,InfiniBox)):
+       nspaces=ibox.network_spaces.find(service='iSCSI_SERVICE').to_list()
+       for ns in nspaces:
+           ilist.append({'target':ns.get_field('properties')['iscsi_iqn']})
+       return ilist
 
 
 class GetTraget(Resource):
@@ -55,7 +57,7 @@ class GetInit(Resource):
     def get(self, iscsi_init):
         reqargs = self.reqparse.parse_args()
         if 'zone_code' in request.args:
-            ibox=ibox=get_box_by_par(par='name', req='ibox', val=request.args['zone_code'], zones=zones)
+            ibox=get_box_by_par(par='name', req='ibox', val=request.args['zone_code'], zones=zones)
             if ibox.hosts.get_host_by_initiator_address(iscsi_init):
         	    if not check_iqn_logged_in(ibox, iscsi_init):
         	        return {'iscsi': {"zone_code": request.args['zone_code'], "iscsi_init":iscsi_init, "initiator_status":"online"}}
